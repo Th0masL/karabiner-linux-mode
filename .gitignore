@@ -1,0 +1,3 @@
+# Karabiner writes timestamped backups next to its live config; if you ever copy
+# one here for inspection, do not commit it.
+karabiner.json.backup.*

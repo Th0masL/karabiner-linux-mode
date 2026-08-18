@@ -1,0 +1,60 @@
+// Place your key bindings in this file to override the defaults
+//
+// Physical key positions, matching a PC/Linux keyboard:
+//   [1] corner key       -> Command   (the Linux "Ctrl" role)
+//   [2] middle key       -> Control   (real Control lives here)
+//   [3] next to spacebar -> Option    (the Linux "Alt" role)
+// That rotation is done in Karabiner-Elements (simple_modifications).
+//
+// Karabiner handles the [1]-key translation for every other app but NOT VS Code:
+// it only knows which app is frontmost, not whether focus is in the editor or the
+// integrated terminal. Those need opposite behaviour for the same keys -- [1]+C
+// must copy in the editor and interrupt in the terminal -- so VS Code is excluded
+// from the Karabiner rules and handled here, where "when" clauses distinguish them.
+[
+  // ---- TERMINAL: control characters back onto [1], Linux-style ----
+  { "key": "cmd+c", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0003" }, "when": "terminalFocus" },   // SIGINT
+  { "key": "cmd+z", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001a" }, "when": "terminalFocus" },   // suspend
+  { "key": "cmd+a", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0001" }, "when": "terminalFocus" },   // start of line
+  { "key": "cmd+e", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0005" }, "when": "terminalFocus" },   // end of line
+  { "key": "cmd+u", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0015" }, "when": "terminalFocus" },   // kill before cursor
+  { "key": "cmd+k", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u000b" }, "when": "terminalFocus" },   // kill after cursor
+  { "key": "cmd+w", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0017" }, "when": "terminalFocus" },   // delete word back
+  { "key": "cmd+r", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0012" }, "when": "terminalFocus" },   // reverse history search
+  { "key": "cmd+backspace", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0017" }, "when": "terminalFocus" },   // delete word back
+
+  // ---- TERMINAL: arrows -> the escape sequences your .zshrc binds ----
+  { "key": "cmd+up", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001b[1;5A" }, "when": "terminalFocus" },   // history-beginning-search-backward
+  { "key": "cmd+down", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001b[1;5B" }, "when": "terminalFocus" },   // history-beginning-search-forward
+  { "key": "cmd+right", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001b[1;5C" }, "when": "terminalFocus" },   // forward-word
+  { "key": "cmd+left", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001b[1;5D" }, "when": "terminalFocus" },   // backward-word
+
+  // ---- TERMINAL: Linux copy/paste, since plain [1]+C stays SIGINT ----
+  { "key": "cmd+shift+c", "command": "workbench.action.terminal.copySelection",
+    "when": "terminalFocus && terminalTextSelected" },
+  { "key": "cmd+shift+v", "command": "workbench.action.terminal.paste",
+    "when": "terminalFocus" },
+
+  // ---- EDITOR: word-wise movement/deletion on [1]+arrows (items 1-4) ----
+  // Replaces the macOS meanings of Cmd+arrows (line start/end) and Cmd+Backspace
+  // (delete to line start). Linux uses Home/End, which is fn+Left/Right here.
+  { "key": "cmd+left", "command": "cursorWordLeft", "when": "editorTextFocus" },
+  { "key": "cmd+right", "command": "cursorWordRight", "when": "editorTextFocus" },
+  { "key": "cmd+shift+left", "command": "cursorWordLeftSelect", "when": "editorTextFocus" },
+  { "key": "cmd+shift+right", "command": "cursorWordRightSelect", "when": "editorTextFocus" },
+  { "key": "cmd+backspace", "command": "deleteWordLeft", "when": "editorTextFocus && !editorReadonly" },
+  { "key": "cmd+delete", "command": "deleteWordRight", "when": "editorTextFocus && !editorReadonly" }
+]
