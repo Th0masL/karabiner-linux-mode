@@ -139,7 +139,8 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 |---|---|---|---|
 | Interrupt | `Ctrl+C` | `Ctrl+C` | `[1]+C` |
 | Suspend | `Ctrl+Z` | `Ctrl+Z` | `[1]+Z` |
-| EOF | `Ctrl+D` | `Ctrl+D` | `[2]+D` or `[5]+D` *(left alone on purpose)* |
+| Delete character / EOF | `Ctrl+D` | `Ctrl+D` | `[1]+D` |
+| Clear screen | `Ctrl+L` | `Ctrl+L` | `[1]+L` |
 | Start / end of line | `Ctrl+A` / `Ctrl+E` | `Ctrl+A` / `Ctrl+E` | `[1]+A` / `[1]+E` |
 | Kill before / after cursor | `Ctrl+U` / `Ctrl+K` | `Ctrl+U` / `Ctrl+K` | `[1]+U` / `[1]+K` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |

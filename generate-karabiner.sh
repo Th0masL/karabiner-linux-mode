@@ -146,6 +146,8 @@ while read -r key meaning; do
 done <<'TABLE'
 c   interrupt
 z   suspend
+d   delete character / EOF
+l   clear screen
 a   start of line
 e   end of line
 u   kill before cursor
