@@ -340,6 +340,84 @@
             ]
           },
           {
+            "description": "terminal: [1]+P sends ^P (previous history entry)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "p",
+                  "modifiers": {
+                    "mandatory": [
+                      "command"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "p",
+                    "modifiers": [
+                      "left_control"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "terminal: [1]+N sends ^N (next history entry)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "n",
+                  "modifiers": {
+                    "mandatory": [
+                      "command"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "n",
+                    "modifiers": [
+                      "left_control"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "description": "terminal: [1]+A sends ^A (start of line)",
             "manipulators": [
               {

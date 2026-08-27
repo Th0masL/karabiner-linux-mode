@@ -151,6 +151,8 @@ l   clear screen
 y   yank killed text
 g   cancel current input
 t   transpose characters
+p   previous history entry
+n   next history entry
 a   start of line
 e   end of line
 u   kill before cursor

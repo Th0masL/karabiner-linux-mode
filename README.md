@@ -151,6 +151,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Delete word forward | `Ctrl+Delete` | `Meta+D` | `[1]+Fn+Backspace` (`[1]+Fn+⌫`) |
 | Delete one character forward | `Delete` | `Forward Delete` | `Fn+Backspace` (`Fn+⌫`) |
 | Reverse history search | `Ctrl+R` | `Ctrl+R` | `[1]+R` |
+| Previous / next history entry | `Ctrl+P` / `Ctrl+N` | `Ctrl+P` / `Ctrl+N` | `[1]+P` / `[1]+N` |
 | History prefix search | *(no default)* | *(no default)* | `[1]+↑/↓` |
 | Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
 | Start / end of command line | `Home` / `End` | `Ctrl+A` / `Ctrl+E` | `Fn+←/→` |
