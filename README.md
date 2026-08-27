@@ -6,74 +6,69 @@ than by what is printed on the keycaps.
 `Ctrl+C` copies in Finder and interrupts in the terminal. `Ctrl+←/→` moves by
 word. `Alt+Tab` switches windows. `Ctrl+Alt+←/→` rotates workspaces.
 
-## Notation: [1] [2] [3]
+## Notation: [1] [2] [3] [4] [5]
 
-Once you rotate the modifiers, the printed labels are misleading, so the three
+Once you remap the modifiers, the printed labels are misleading, so the five
 modifier keys are referred to by position. The brackets mark a modifier
-position, so `[3]+1` means "the third modifier plus the 1 key".
+position, so `[4]+1` means "the fourth modifier plus the 1 key".
 
 ```
-        [1]       [2]        [3]      spacebar
-PC:    Ctrl      Super       Alt
-Mac:  Control    Option    Command
+        [1]       [2]        [3]      spacebar      [4]       [5]
+PC:    Ctrl      Super       Alt                     Alt     Super
+Mac:  Control    Option    Command                 Command   Option
+Here: Command   Control    Option                  Option   Control
 ```
 
-Left to right, ignoring `fn`. **Position 1 is the same key on both platforms.**
-What differs is what the OS binds to it: Linux puts copy/paste/save on position
-1, macOS puts them on position 3.
+Left to right, ignoring `fn` and the arrow cluster. **Position 1 is the same key
+on both platforms.** What differs is what the OS binds to it: Linux puts
+copy/paste/save on position 1, macOS puts them on positions 3 and 4.
 
-### Only the left side is remapped, on purpose
+### The missing sixth key
 
-The rotation touches `left_control`, `left_option` and `left_command` only. The
-right-hand modifiers keep their native macOS behaviour, and that is deliberate
-rather than an oversight.
+The left side has three modifier positions; the right side of an Apple keyboard
+has only two. The mappings mirror the positions that exist:
 
-The rules match modifiers without caring which side they came from, and `[1]`
-produces Command while `[3]` produces Option. So the untouched right-hand keys
-already behave identically to their left-hand counterparts:
+| Position | Printed key | Produces | Linux role |
+|---|---|---|---|
+| `[1]` | Left Control | Command | Ctrl |
+| `[2]` | Left Option | Control | Super / real Control |
+| `[3]` | Left Command | Option | Alt |
+| `[4]` | Right Command | Option | Alt |
+| `[5]` | Right Option | Control | Super / real Control |
 
-| Key | Stays as | Behaves as |
-|---|---|---|
-| Right Command | Command | `[1]` |
-| Right Option | Option | `[3]` |
-| Right Control | *does not exist on Apple keyboards* | nothing plays `[2]` |
-
-Rotating the right side as well would trade that away. `right_command` would
-become Option and `right_option` would become Control, giving you `[2]` and
-`[3]` on the right instead of `[1]` and `[3]`. That means losing the right-hand
-`[1]`, by far the most used modifier, to gain `[2]`, which this layout uses for
-exactly two shortcuts. Not worth it.
-
-Real Control therefore lives only at `[2]`, which is fine: Apple keyboards have
-no right Control key to put it on anyway.
+Thus `[3]` and `[4]` are interchangeable Alt positions, while `[2]` and `[5]`
+are interchangeable Super/Control positions. Apple provides no third modifier
+key on the right that could mirror `[1]`. Copy/paste/save therefore remain
+left-side shortcuts.
 
 ## The idea
 
-Instead of translating dozens of shortcuts app by app, **rotate the three
-modifiers once** so the corner key becomes the one macOS treats as Command:
+Instead of translating dozens of shortcuts app by app, **remap the five
+modifier positions once** so the corner key becomes the one macOS treats as
+Command and both sides follow the Linux positions:
 
 ```
 [1]  ->  Command    the "Linux Ctrl" role: copy, paste, save, quit, find
-[2]  ->  Control    real Control, for terminal control characters
-[3]  ->  Option     the "Linux Alt" role
+[2]/[5]  ->  Control    real Control / the "Linux Super" position
+[3]/[4]  ->  Option     the "Linux Alt" role
 ```
 
-Three lines of config. Every `Cmd` shortcut in every app immediately lands on
+Five lines of config. Every `Cmd` shortcut in every app immediately lands on
 `[1]`, with no per-app rules, including webviews, Electron apps and native
 dialogs that per-app remapping cannot reach. As a bonus, `Cmd+Tab` sits exactly
 where Linux puts `Alt+Tab`.
 
-Everything after the rotation is exception handling:
+Everything after the positional remapping is exception handling:
 
 | Layer | Job |
 |---|---|
-| Karabiner `simple_modifications` | the rotation, 3 lines |
+| Karabiner `simple_modifications` | the five positional mappings |
 | Karabiner `complex_modifications` | terminal control characters, windows, 27 rules |
 | macOS Keyboard Shortcuts | workspaces and Mission Control, moved to `[1]+[3]`+arrow |
 | `~/.zshrc` | 4 `bindkey` lines |
 | VS Code `keybindings.json` | 21 bindings |
 
-**The rotation must live in Karabiner, not in the macOS Modifier Keys pane.**
+**The remapping must live in Karabiner, not in the macOS Modifier Keys pane.**
 Set in both places it applies twice, and `[1]` ends up as Option. The Karabiner
 version also covers every keyboard at once, and lives in this repo where
 "Restore Defaults" cannot reach it. The verifier warns if it finds a macOS-level
@@ -93,7 +88,7 @@ after installing.
 
 ### Clipboard, files, app-level
 
-These need no rules at all. The rotation alone puts them on `[1]`.
+These need no rules at all. The positional remapping alone puts them on `[1]`.
 
 | Action | Linux | macOS | Here |
 |---|---|---|---|
@@ -138,7 +133,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 |---|---|---|---|
 | Interrupt | `Ctrl+C` | `Ctrl+C` | `[1]+C` |
 | Suspend | `Ctrl+Z` | `Ctrl+Z` | `[1]+Z` |
-| EOF | `Ctrl+D` | `Ctrl+D` | `[2]+D` *(left alone on purpose)* |
+| EOF | `Ctrl+D` | `Ctrl+D` | `[2]+D` or `[5]+D` *(left alone on purpose)* |
 | Start / end of line | `Ctrl+A` / `Ctrl+E` | `Ctrl+A` / `Ctrl+E` | `[1]+A` / `[1]+E` |
 | Kill before / after cursor | `Ctrl+U` / `Ctrl+K` | `Ctrl+U` / `Ctrl+K` | `[1]+U` / `[1]+K` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
@@ -150,7 +145,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Paste | `Ctrl+Shift+V` | `Cmd+V` | `[1]+Shift+V` |
 | New tab | `Ctrl+Shift+T` | `Cmd+T` | `[1]+Shift+T` |
 | Next / previous tab | `Ctrl+PgUp` / `Ctrl+PgDn` | `Cmd+Shift+]` / `Cmd+Shift+[` | `[1]+Tab` / `[1]+Shift+Tab` |
-| Jump to tab N | `Alt+1`..`9` | `Cmd+1`..`9` | `[3]+1`..`9` |
+| Jump to tab N | `Alt+1`..`9` | `Cmd+1`..`9` | `[3]+1`..`9` or `[4]+1`..`9` |
 
 ### Windows and desktop
 
@@ -159,15 +154,15 @@ rebind by hand.
 
 | Action | Linux | macOS | Here |
 |---|---|---|---|
-| App switcher | `Alt+Tab` | `Cmd+Tab` | `[3]+Tab` |
-| Cycle windows of current app | `Alt+Backtick` | `Cmd+Backtick` | `[3]+Backtick` |
-| Close window | `Alt+F4` | `Cmd+W` | `[3]+F4` |
-| Lock screen | `Super+L` | `Ctrl+Cmd+Q` | `[2]+L` |
-| Open a terminal | `Ctrl+Alt+T` | *(no default)* | `[1]+[3]+T` |
+| App switcher | `Alt+Tab` | `Cmd+Tab` | `[3]+Tab` or `[4]+Tab` |
+| Cycle windows of current app | `Alt+Backtick` | `Cmd+Backtick` | `[3]+Backtick` or `[4]+Backtick` |
+| Close window | `Alt+F4` | `Cmd+W` | `[3]+F4` or `[4]+F4` |
+| Lock screen | `Super+L` | `Ctrl+Cmd+Q` | `[2]+L` or `[5]+L` |
+| Open a terminal | `Ctrl+Alt+T` | *(no default)* | `[1]+[3]+T` or `[1]+[4]+T` |
 | Screenshot | `PrtSc` | `Cmd+Shift+3` | `[1]+Shift+3` |
-| Switch workspace | `Ctrl+Alt+←/→` | `Ctrl+←/→` | `[1]+[3]+←/→` |
-| Overview | `Super` | `Ctrl+↑` | `[1]+[3]+↑` |
-| All windows of current app | *(varies)* | `Ctrl+↓` | `[1]+[3]+↓` |
+| Switch workspace | `Ctrl+Alt+←/→` | `Ctrl+←/→` | `[1]+[3]+←/→` or `[1]+[4]+←/→` |
+| Overview | `Super` | `Ctrl+↑` | `[1]+[3]+↑` or `[1]+[4]+↑` |
+| All windows of current app | *(varies)* | `Ctrl+↓` | `[1]+[3]+↓` or `[1]+[4]+↓` |
 
 ### Function keys
 
@@ -240,8 +235,8 @@ setup not stored in a file you control.
 * Moving a window to another workspace has no macOS shortcut at all. It needs a
   tool such as yabai.
 * `[1]+D` (EOF) is deliberately not mapped: it is one typo away from closing
-  your terminal. EOF stays on `[2]+D`. Add `setopt IGNORE_EOF` to `~/.zshrc` if
-  you want it on `[1]` with a guard.
+  your terminal. EOF stays on `[2]+D` or `[5]+D`. Add `setopt IGNORE_EOF` to
+  `~/.zshrc` if you want it on `[1]` with a guard.
 * macOS shortcut settings are not version-controlled, and one "Restore Defaults"
   click wipes them.
 
@@ -276,6 +271,6 @@ Started as a fork of
 which takes the opposite approach: it leaves the modifiers alone and translates
 `Ctrl+<key>` to `Cmd+<key>` app by app, in 59 rules. That works well, but it can
 only reach apps identifiable by bundle ID, never webviews or native dialogs.
-This repo trades those rules for one rotation plus a few exceptions.
+This repo trades those rules for one positional remapping plus a few exceptions.
 
 Public domain, as upstream was. See `LICENSE.txt`.

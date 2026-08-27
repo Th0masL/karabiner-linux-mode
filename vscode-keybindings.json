@@ -4,7 +4,9 @@
 //   [1] corner key       -> Command   (the Linux "Ctrl" role)
 //   [2] middle key       -> Control   (real Control lives here)
 //   [3] next to spacebar -> Option    (the Linux "Alt" role)
-// That rotation is done in Karabiner-Elements (simple_modifications).
+//   [4] right of spacebar -> Option   (the second Linux "Alt" position)
+//   [5] rightmost         -> Control  (the second Linux "Super" position)
+// That positional remapping is done in Karabiner-Elements (simple_modifications).
 //
 // Karabiner handles the [1]-key translation for every other app but NOT VS Code:
 // it only knows which app is frontmost, not whether focus is in the editor or the

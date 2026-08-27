@@ -168,7 +168,7 @@ mv "$TMP" "$LIVE_CFG"
 
 jq -r --arg name "$PROFILE" '
   (.profiles[] | select(.name == $name)) as $p
-  | "Installed profile \"\($name)\" (\(($p.simple_modifications // []) | length) rotations, \((($p.complex_modifications.rules) // []) | length) rules)",
+  | "Installed profile \"\($name)\" (\(($p.simple_modifications // []) | length) modifier mappings, \((($p.complex_modifications.rules) // []) | length) rules)",
     "Preserved profiles: \([.profiles[].name] - [$name] | join(", "))"
 ' "$LIVE_CFG"
 

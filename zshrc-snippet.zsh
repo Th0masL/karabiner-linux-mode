@@ -17,7 +17,8 @@
 # actually arrives down the pty. It also means these bindings work unchanged
 # over SSH and inside tmux.
 #
-#   [1] = corner key,  [2] = middle key,  [3] = key next to the spacebar
+#   [1]/[2]/[3] are left of Space; [4]/[5] are right of Space.
+#   [2] and [5] produce Control; [3] and [4] produce Option.
 # ---------------------------------------------------------------------------
 
 # [1]+Up / [1]+Down -- walk history, filtered by what you have already typed.

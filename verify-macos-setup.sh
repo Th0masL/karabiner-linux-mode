@@ -12,10 +12,9 @@
 # symbols; the setter is deliberately not declared, so it cannot change
 # anything.
 #
-# Key positions (a rotated, PC-like layout -- the rotation is done by Karabiner):
-#   [1] corner key       -> Command
-#   [2] middle key       -> Control
-#   [3] next to spacebar -> Option
+# Key positions (a PC-like layout -- the remapping is done by Karabiner):
+#   [1] -> Command    [2] -> Control    [3] -> Option
+#   [4] -> Option     [5] -> Control
 #
 set -uo pipefail
 
@@ -142,7 +141,7 @@ fi
 
 echo
 echo "[2/5] Modifier Keys at the macOS level"
-# This layout does the [1]/[2]/[3] rotation in Karabiner. A macOS-level remap on
+# This layout remaps [1] through [5] in Karabiner. A macOS-level remap on
 # top of that applies TWICE -- [1] becomes Command (macOS), then Karabiner
 # rotates it again to Option -- and both configs look correct in isolation,
 # which makes it painful to diagnose.
@@ -219,14 +218,14 @@ if [[ "$MACOS_REMAP" == "1" && "$KARABINER_ROT" != "0" ]]; then
        "on an affected keyboard they compose, rotating [1] twice. Restore defaults for every keyboard unless this is deliberate"
 elif [[ "$MACOS_REMAP" == "1" ]]; then
   warn "the rotation looks like it is done at the macOS level, not in Karabiner" \
-       "supported, but not what this repo ships. The rules assume [1]=Command, [2]=Control, [3]=Option"
-elif [[ "$KARABINER_ROT" == "3" ]]; then
-  ok "the rotation is done in Karabiner only, as intended"
+       "supported, but not what this repo ships. The rules assume [1]=Command, [2]/[5]=Control, [3]/[4]=Option"
+elif [[ "$KARABINER_ROT" == "5" ]]; then
+  ok "the five-position remapping is done in Karabiner only, as intended"
 elif [[ "$KARABINER_ROT" == "0" ]]; then
   warn "no modifier rotation found in either place" \
        "without it [1] is still Control and almost nothing in this layout works"
 else
-  warn "Karabiner has $KARABINER_ROT modifier rotations, expected 3" \
+  warn "Karabiner has $KARABINER_ROT modifier remappings, expected 5" \
        "a partial rotation behaves unpredictably"
 fi
 echo
@@ -270,7 +269,7 @@ if [[ -f "$LIVE" ]] && jq empty "$LIVE" 2>/dev/null; then
   elif [[ "$actual" == "$expected" ]]; then
     rot="$(jq '(.simple_modifications // []) | length' <<< "$actual")"
     nrules="$(jq '(.complex_modifications.rules // []) | length' <<< "$actual")"
-    ok "profile '$PROFILE' exactly matches the repository ($rot rotations, $nrules rules)"
+    ok "profile '$PROFILE' exactly matches the repository ($rot modifier mappings, $nrules rules)"
   else
     bad "profile '$PROFILE' differs from the repository layout" \
         "run ./install-karabiner-config.sh to replace the drifted profile"

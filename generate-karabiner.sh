@@ -10,10 +10,11 @@
 #   ./generate-karabiner.sh --check  # fail if karabiner.json is out of date
 #
 # Key positions:
-#   [1] corner key -> Command    [2] middle -> Control    [3] by space -> Option
+#   [1] -> Command    [2] -> Control    [3] -> Option
+#   [4] -> Option     [5] -> Control
 #
-# The rotation itself is three simple_modifications; everything else is a
-# complex_modification correcting a case the rotation alone gets wrong.
+# The positional remapping is five simple_modifications; everything else is a
+# complex_modification correcting a case the remapping alone gets wrong.
 #
 # Requires: jq
 #
@@ -93,8 +94,8 @@ rule() {
 #=============================================================================#
 # 1. TERMINAL -- control characters back onto [1]
 #
-# The rotation puts real Control on [2], but Linux expects control characters on
-# [1]. Inside terminal apps, translate them back.
+# The remapping puts real Control on [2] and [5], but Linux expects control
+# characters on [1]. Inside terminal apps, translate them back.
 #=============================================================================#
 while read -r key meaning; do
   [[ -z "${key:-}" || "$key" == \#* ]] && continue
@@ -145,7 +146,7 @@ TAB_MANS=()
 for n in 1 2 3 4 5 6 7 8 9; do
   TAB_MANS+=("$(man "$n" option "$n" left_command "$IF_TERM")")
 done
-rule "terminal: [3]+1..9 jumps to a tab" "${TAB_MANS[@]}"
+rule "terminal: [3]/[4]+1..9 jumps to a tab" "${TAB_MANS[@]}"
 
 #=============================================================================#
 # 3. TEXT EDITING -- everywhere except terminals and VS Code
@@ -176,22 +177,22 @@ rule "editing: [1]+Tab / [1]+Shift+Tab cycles tabs" \
 # rather than written literally: a backtick breaks markdown code spans and is
 # command substitution inside a double-quoted shell string.
 #=============================================================================#
-rule "window: [3]+Tab switches applications" \
+rule "window: [3]/[4]+Tab switches applications" \
      "$(man tab option       tab left_command            "$ANYWHERE")" \
      "$(man tab option+shift tab left_command+left_shift "$ANYWHERE")"
 
-rule "window: [3]+Backtick cycles windows of the current application" \
+rule "window: [3]/[4]+Backtick cycles windows of the current application" \
      "$(man grave_accent_and_tilde option       grave_accent_and_tilde left_command            "$ANYWHERE")" \
      "$(man grave_accent_and_tilde option+shift grave_accent_and_tilde left_command+left_shift "$ANYWHERE")"
 
-rule "window: [3]+F4 closes the window" \
+rule "window: [3]/[4]+F4 closes the window" \
      "$(man f4 option w left_command "$ANYWHERE")"
 
 # macOS locks with control+command+Q.
-rule "window: [2]+L locks the screen" \
+rule "window: [2]/[5]+L locks the screen" \
      "$(man l control q left_control+left_command "$ANYWHERE")"
 
-rule "window: [1]+[3]+T opens a terminal" \
+rule "window: [1]+[3]/[4]+T opens a terminal" \
      "$(shell_man t command+option "open -b com.googlecode.iterm2" "$ANYWHERE")"
 
 #=============================================================================#
@@ -219,14 +220,14 @@ NEW="$(jq -s --arg name "$PROFILE_NAME" '
         selected: true,
         virtual_hid_keyboard: {keyboard_type_v2: "ansi"},
         simple_modifications: [
-          # Left side only, deliberately. Rules match modifiers side-agnostically
-          # and [1] produces Command, so the untouched Right Command already
-          # behaves exactly like [1]; likewise Right Option and [3]. Rotating the
-          # right side would turn Right Command into Option, costing you the
-          # right-hand [1] to gain [2], which this layout uses twice. Do not.
           {from: {key_code: "left_control"}, to: [{key_code: "left_command"}]},
           {from: {key_code: "left_option"},  to: [{key_code: "left_control"}]},
-          {from: {key_code: "left_command"}, to: [{key_code: "left_option"}]}
+          {from: {key_code: "left_command"}, to: [{key_code: "left_option"}]},
+          # Mirror the Linux Alt and Super positions on the right. Apple
+          # keyboards have no sixth/right-Control key, so there is no
+          # right-side equivalent of [1].
+          {from: {key_code: "right_command"}, to: [{key_code: "right_option"}]},
+          {from: {key_code: "right_option"},  to: [{key_code: "right_control"}]}
         ],
         complex_modifications: {rules: .}
       }
@@ -248,6 +249,6 @@ printf '%s\n' "" >> /dev/null
 echo "wrote $OUT"
 jq -r --arg n "$PROFILE_NAME" '
   .profiles[] | select(.name == $n)
-  | "  \((.simple_modifications | length)) modifier rotations",
+  | "  \((.simple_modifications | length)) modifier mappings",
     "  \((.complex_modifications.rules | length)) rules, \(
         [.complex_modifications.rules[].manipulators[]] | length) manipulators"' "$OUT"
