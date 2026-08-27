@@ -150,6 +150,7 @@ d   delete character / EOF
 l   clear screen
 y   yank killed text
 g   cancel current input
+t   transpose characters
 a   start of line
 e   end of line
 u   kill before cursor
