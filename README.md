@@ -105,7 +105,7 @@ These need no rules at all. The positional remapping alone puts them on `[1]`.
 | Print | `Ctrl+P` | `Cmd+P` | `[1]+P` |
 | Find | `Ctrl+F` | `Cmd+F` | `[1]+F` |
 | Close tab | `Ctrl+W` | `Cmd+W` | `[1]+W` |
-| Quit app | `Ctrl+Q` | `Cmd+Q` | `[1]+Q` |
+| Quit app | `Ctrl+Q` | `Cmd+Q` | `[1]+Q` *(outside terminals)* |
 | New tab | `Ctrl+T` | `Cmd+T` | `[1]+T` |
 | Reload page | `Ctrl+R` | `Cmd+R` | `[1]+R` |
 | Address bar | `Ctrl+L` | `Cmd+L` | `[1]+L` |
@@ -148,6 +148,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Transpose characters | `Ctrl+T` | `Ctrl+T` | `[1]+T` |
 | Insert next key literally | `Ctrl+V` | `Ctrl+V` | `[1]+V` |
 | Delete previous character | `Ctrl+H` | `Ctrl+H` | `[1]+H` |
+| Pause / resume terminal output | `Ctrl+S` / `Ctrl+Q` | `Ctrl+S` / `Ctrl+Q` | `[1]+S` / `[1]+Q` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
 | Delete word back | `Ctrl+Backspace` | `Option+Delete` (`⌫`) | `[1]+Backspace` (`[1]+⌫` on a Magic Keyboard) |
 | Delete word forward | `Ctrl+Delete` | `Meta+D` | `[1]+Fn+Backspace` (`[1]+Fn+⌫`) |
@@ -162,6 +163,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Copy | `Ctrl+Shift+C` | `Cmd+C` | `[1]+Shift+C` |
 | Paste | `Ctrl+Shift+V` | `Cmd+V` | `[1]+Shift+V` |
 | New tab | `Ctrl+Shift+T` | `Cmd+T` | `[1]+Shift+T` |
+| Quit terminal application | `Ctrl+Shift+Q` | `Cmd+Q` | `[1]+Shift+Q` |
 | Next / previous tab | `Ctrl+PgUp` / `Ctrl+PgDn` | `Cmd+Shift+]` / `Cmd+Shift+[` | `[1]+Tab` / `[1]+Shift+Tab` |
 | Jump to tab N | `Alt+1`..`9` | `Cmd+1`..`9` | `[3]+1`..`9` or `[4]+1`..`9` |
 

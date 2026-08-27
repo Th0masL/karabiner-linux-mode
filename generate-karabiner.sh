@@ -157,6 +157,8 @@ b   move one character left
 f   move one character right
 v   insert next key literally
 h   delete previous character
+q   resume terminal output
+s   pause terminal output
 a   start of line
 e   end of line
 u   kill before cursor
@@ -215,6 +217,9 @@ rule "terminal: [1]+Tab / [1]+Shift+Tab cycles tabs" \
 
 rule "terminal: [1]+Shift+T opens a new tab" \
      "$(man t command+shift t left_command "$IF_TERM")"
+
+rule "terminal: [1]+Shift+Q quits the terminal application" \
+     "$(man q command+shift q left_command "$IF_TERM")"
 
 TAB_MANS=()
 for n in 1 2 3 4 5 6 7 8 9; do
