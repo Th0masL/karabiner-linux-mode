@@ -210,8 +210,10 @@ cd karabiner-linux-mode
 It lists your Karabiner profiles, asks which to install into (default `Linux`),
 runs the macOS checks, then merges the profile. Your other profiles are left
 alone and the previous config is backed up. It also safely merges Linux-style
-native editing behavior into `~/Library/KeyBindings/DefaultKeyBinding.dict`.
-Restart open native applications such as Notes after installation.
+native editing behavior into `~/Library/KeyBindings/DefaultKeyBinding.dict`
+and focus-aware bindings into VS Code and VSCodium when their user config
+directories exist. Restart open native applications such as Notes after
+installation; Karabiner and the editors do not need a restart.
 
 To remove only the installer-managed AppKit bindings and restore any values
 that existed before installation:
@@ -222,6 +224,19 @@ that existed before installation:
 
 Other custom bindings in that file are preserved. If you change one of the
 managed bindings after installation, uninstall preserves your newer value too.
+
+To remove only the installer-managed VS Code/VSCodium block while preserving
+every binding outside it:
+
+```sh
+./install-karabiner-config.sh --uninstall-editor-keybindings
+```
+
+The editor manager keeps existing JSONC comments and unrelated bindings
+byte-for-byte, creates a timestamped backup before every change, and refuses to
+delete its block if that block was edited after installation. Older setups made
+by copying this repository's complete reference file are adopted without
+duplicating the 40 bindings.
 
 The terminal shortcut opens iTerm2 by default. macOS has no system-wide
 "default terminal" setting, so choose another terminal when generating the
@@ -245,17 +260,11 @@ Then, by hand:
 
 ```sh
 cat zshrc-snippet.zsh >> ~/.zshrc
-
-# VS Code (after launching it at least once)
-cp vscode-keybindings.json ~/Library/Application\ Support/Code/User/keybindings.json
-
-# VSCodium (after launching it at least once)
-cp vscode-keybindings.json ~/Library/Application\ Support/VSCodium/User/keybindings.json
 ```
 
-Install the editor file only for the applications you use. These copies are not
-automatic because each command overwrites any keybindings already in that
-editor's `keybindings.json`.
+The shell lines remain manual because shell startup files are executable code
+and may have framework-specific ordering. Editor bindings are installed
+automatically and safely by the installer.
 
 ## Manual macOS settings
 
@@ -280,7 +289,7 @@ and history search with no visible cause.
 ./verify-macos-setup.sh
 ```
 
-24 read-only checks across macOS shortcuts, Karabiner, AppKit, zsh, VS Code and
+25 read-only checks across macOS shortcuts, Karabiner, AppKit, zsh, VS Code and
 VSCodium. Run it
 whenever something stops working. The usual cause is **Restore Defaults** in
 Keyboard Shortcuts, which resets every pane at once and is the only part of this
@@ -295,9 +304,6 @@ setup not stored in a file you control.
   mapping is not a universal Home/End replacement inside Vim, less or tmux.
 * Moving a window to another workspace has no macOS shortcut at all. It needs a
   tool such as yabai.
-* `[1]+D` (EOF) is deliberately not mapped: it is one typo away from closing
-  your terminal. EOF stays on `[2]+D` or `[5]+D`. Add `setopt IGNORE_EOF` to
-  `~/.zshrc` if you want it on `[1]` with a guard.
 * macOS shortcut settings are not version-controlled, and one "Restore Defaults"
   click wipes them.
 
@@ -307,9 +313,10 @@ setup not stored in a file you control.
 |---|---|
 | `generate-karabiner.sh` | source of truth: the tables that build the rules |
 | `karabiner.json` | generated output |
-| `install-karabiner-config.sh` | list profiles, verify, merge |
+| `install-karabiner-config.sh` | list profiles, verify, and merge all managed configuration |
 | `manage-appkit-keybindings.py` | safely install/remove native editing bindings |
-| `verify-macos-setup.sh` | 24 read-only checks |
+| `manage-editor-keybindings.py` | safely install/remove VS Code/VSCodium bindings |
+| `verify-macos-setup.sh` | 25 read-only checks |
 | `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
 

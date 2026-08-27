@@ -1,0 +1,418 @@
+#!/usr/bin/env python3
+"""Safely install, check, or remove VS Code/VSCodium keybindings."""
+
+from __future__ import annotations
+
+import json
+import os
+import plistlib
+import shutil
+import stat
+import sys
+import tempfile
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+
+HERE = Path(__file__).resolve().parent
+REFERENCE = HERE / "vscode-keybindings.json"
+STATE = (
+    Path.home()
+    / "Library/Application Support/karabiner-linux-mode/editor-keybindings-state.plist"
+)
+EDITORS = {
+    "VS Code": Path.home() / "Library/Application Support/Code/User/keybindings.json",
+    "VSCodium": Path.home()
+    / "Library/Application Support/VSCodium/User/keybindings.json",
+}
+BEGIN_MARKER = "  // BEGIN karabiner-linux-mode managed keybindings"
+END_MARKER = "  // END karabiner-linux-mode managed keybindings"
+EMPTY_DOCUMENT = "[\n]\n"
+
+
+def mask_jsonc_comments(text: str) -> str:
+    """Replace JSONC comments with spaces without changing offsets or strings."""
+    output = list(text)
+    index = 0
+    in_string = False
+    escaped = False
+    while index < len(text):
+        char = text[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            index += 1
+            continue
+        if char == '"':
+            in_string = True
+            index += 1
+            continue
+        if text.startswith("//", index):
+            end = text.find("\n", index)
+            if end == -1:
+                end = len(text)
+            for position in range(index, end):
+                output[position] = " "
+            index = end
+            continue
+        if text.startswith("/*", index):
+            end = text.find("*/", index + 2)
+            if end == -1:
+                raise ValueError("unterminated JSONC block comment")
+            for position in range(index, end + 2):
+                if output[position] not in "\r\n":
+                    output[position] = " "
+            index = end + 2
+            continue
+        index += 1
+
+    return "".join(output)
+
+
+def strip_jsonc(text: str) -> str:
+    """Remove JSONC comments and trailing commas without changing strings."""
+    cleaned = mask_jsonc_comments(text)
+    output = list(cleaned)
+    in_string = False
+    escaped = False
+    for index, char in enumerate(cleaned):
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+            continue
+        if char != ",":
+            continue
+        following = index + 1
+        while following < len(cleaned) and cleaned[following].isspace():
+            following += 1
+        if following < len(cleaned) and cleaned[following] in "}]":
+            output[index] = " "
+    return "".join(output)
+
+
+def parse_bindings(text: str, source: Path | str) -> list[dict[str, Any]]:
+    try:
+        value = json.loads(strip_jsonc(text))
+    except json.JSONDecodeError as error:
+        raise ValueError(f"{source} is not valid JSONC: {error}") from error
+    if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+        raise ValueError(f"{source} must contain an array of keybinding objects")
+    return value
+
+
+def root_closing_bracket(text: str, source: Path | str) -> int:
+    """Return the closing bracket of a top-level JSONC array."""
+    cleaned = strip_jsonc(text)
+    start = next((i for i, char in enumerate(cleaned) if not char.isspace()), None)
+    if start is None or cleaned[start] != "[":
+        raise ValueError(f"{source} must contain a top-level array")
+    depth = 0
+    in_string = False
+    escaped = False
+    for index in range(start, len(cleaned)):
+        char = cleaned[index]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif char == "\\":
+                escaped = True
+            elif char == '"':
+                in_string = False
+            continue
+        if char == '"':
+            in_string = True
+        elif char in "[{":
+            depth += 1
+        elif char in "]}":
+            depth -= 1
+            if depth == 0:
+                if char != "]" or cleaned[index + 1 :].strip():
+                    raise ValueError(f"{source} must contain one top-level array")
+                return index
+    raise ValueError(f"{source} has no closing top-level array bracket")
+
+
+def make_block(bindings: list[dict[str, Any]], needs_separator: bool) -> str:
+    rendered = json.dumps(bindings, ensure_ascii=True, indent=2)
+    inner = rendered[2:-2]
+    separator = "," if needs_separator else ""
+    return (
+        f"{separator}\n{BEGIN_MARKER}\n"
+        f"{inner}\n"
+        f"{END_MARKER}\n"
+    )
+
+
+def marker_present(text: str) -> bool:
+    return BEGIN_MARKER in text or END_MARKER in text
+
+
+def needs_separator(text: str, closing: int, has_entries: bool) -> bool:
+    if not has_entries:
+        return False
+    masked = mask_jsonc_comments(text)
+    position = closing - 1
+    while position >= 0 and masked[position].isspace():
+        position -= 1
+    return position < 0 or masked[position] != ","
+
+
+def read_state() -> dict[str, Any]:
+    if not STATE.exists():
+        return {"version": 1, "targets": {}}
+    with STATE.open("rb") as stream:
+        state = plistlib.load(stream)
+    if (
+        not isinstance(state, dict)
+        or state.get("version") != 1
+        or not isinstance(state.get("targets"), dict)
+    ):
+        raise ValueError(f"unrecognized ownership record: {STATE}")
+    return state
+
+
+def atomic_write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    mode = stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o600
+    fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "w", encoding="utf-8", newline="") as stream:
+            stream.write(text)
+        os.chmod(temporary, mode)
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def write_state(state: dict[str, Any]) -> None:
+    STATE.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary_name = tempfile.mkstemp(prefix=f".{STATE.name}.", dir=STATE.parent)
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(fd, "wb") as stream:
+            plistlib.dump(state, stream, fmt=plistlib.FMT_XML, sort_keys=False)
+        os.chmod(temporary, 0o600)
+        os.replace(temporary, STATE)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def backup(path: Path) -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    destination = path.with_name(f"{path.name}.backup.{timestamp}")
+    suffix = 1
+    while destination.exists():
+        destination = path.with_name(f"{path.name}.backup.{timestamp}.{suffix}")
+        suffix += 1
+    shutil.copy2(path, destination)
+    return destination
+
+
+def detected_targets(state: dict[str, Any]) -> list[tuple[str, Path]]:
+    owned_paths = set(state["targets"])
+    targets = []
+    for label, path in EDITORS.items():
+        if path.exists() or path.parent.exists() or str(path) in owned_paths:
+            targets.append((label, path))
+    return targets
+
+
+def install() -> int:
+    reference_text = REFERENCE.read_text(encoding="utf-8")
+    reference = parse_bindings(reference_text, REFERENCE)
+    state = read_state()
+    targets = detected_targets(state)
+    if not targets:
+        print("No VS Code or VSCodium user configuration directories found; skipped.")
+        return 0
+
+    changes: list[tuple[str, Path, str, str, dict[str, Any], bool]] = []
+    for label, path in targets:
+        path_key = str(path)
+        entry = state["targets"].get(path_key)
+        existed = path.exists()
+        current = path.read_text(encoding="utf-8") if existed else EMPTY_DOCUMENT
+
+        if entry:
+            if not isinstance(entry, dict) or not isinstance(entry.get("installed_block"), str):
+                raise ValueError(f"unrecognized ownership record for {path}")
+            old_block = entry["installed_block"]
+            if old_block in current:
+                base = current.replace(old_block, "", 1)
+            elif marker_present(current):
+                raise ValueError(
+                    f"managed block in {path} was edited; move custom changes outside "
+                    "the managed markers before reinstalling"
+                )
+            else:
+                # The user removed the old block manually. Reinstall into the
+                # remaining document while retaining the original ownership.
+                base = current
+        elif marker_present(current):
+            raise ValueError(f"unowned karabiner-linux-mode marker found in {path}")
+        elif existed and current == reference_text:
+            # Migrate the old documented `cp vscode-keybindings.json ...`
+            # installation into a fully removable managed block.
+            base = EMPTY_DOCUMENT
+            entry = {"remove_file_when_empty": True}
+        else:
+            base = current
+            entry = {"remove_file_when_empty": not existed}
+
+        base_bindings = parse_bindings(base, path)
+        missing = [binding for binding in reference if binding not in base_bindings]
+        if not missing:
+            if entry and path_key in state["targets"]:
+                state["targets"].pop(path_key, None)
+            print(f"Confirmed {label} already contains all reference bindings -> {path}")
+            continue
+
+        conflicts = sum(
+            1
+            for managed in missing
+            for existing in base_bindings
+            if existing.get("key") == managed.get("key")
+            and existing.get("when") == managed.get("when")
+            and existing != managed
+        )
+        closing = root_closing_bracket(base, path)
+        block = make_block(
+            missing,
+            needs_separator(base, closing, bool(base_bindings)),
+        )
+        updated = base[:closing] + block + base[closing:]
+        parse_bindings(updated, path)
+        new_entry = {
+            "installed_block": block,
+            "remove_file_when_empty": bool(entry.get("remove_file_when_empty", False)),
+        }
+        if updated == current and state["targets"].get(path_key) == new_entry:
+            print(f"Confirmed {label} installer-managed keybindings -> {path}")
+            continue
+        changes.append((label, path, current, updated, new_entry, existed))
+        if conflicts:
+            print(
+                f"warning: {label} has {conflicts} earlier binding(s) with the same key "
+                "and scope; the managed bindings take precedence"
+            )
+
+    for label, path, current, updated, entry, existed in changes:
+        if existed:
+            destination = backup(path)
+            print(f"Backed up {label} keybindings -> {destination}")
+        state["targets"][str(path)] = entry
+        write_state(state)
+        atomic_write_text(path, updated)
+        print(f"Installed {label} Linux keybindings -> {path}")
+
+    if not state["targets"] and STATE.exists():
+        STATE.unlink()
+    return 0
+
+
+def uninstall() -> int:
+    state = read_state()
+    if not state["targets"]:
+        print("No installer-managed editor keybindings were found; nothing changed.")
+        return 0
+
+    failures = 0
+    for path_key, entry in list(state["targets"].items()):
+        path = Path(path_key)
+        if not path.exists():
+            state["targets"].pop(path_key)
+            continue
+        block = entry.get("installed_block") if isinstance(entry, dict) else None
+        if not isinstance(block, str):
+            raise ValueError(f"unrecognized ownership record for {path}")
+        current = path.read_text(encoding="utf-8")
+        if block not in current:
+            if marker_present(current):
+                print(f"error: preserved edited managed block in {path}", file=sys.stderr)
+                failures += 1
+                continue
+            state["targets"].pop(path_key)
+            continue
+
+        updated = current.replace(block, "", 1)
+        parse_bindings(updated, path)
+        destination = backup(path)
+        print(f"Backed up editor keybindings -> {destination}")
+        if entry.get("remove_file_when_empty") and updated == EMPTY_DOCUMENT:
+            path.unlink()
+        else:
+            atomic_write_text(path, updated)
+        state["targets"].pop(path_key)
+        print(f"Removed installer-managed Linux keybindings from {path}")
+
+    if state["targets"]:
+        write_state(state)
+    elif STATE.exists():
+        STATE.unlink()
+        try:
+            STATE.parent.rmdir()
+        except OSError:
+            pass
+    return 1 if failures else 0
+
+
+def check() -> int:
+    reference = parse_bindings(REFERENCE.read_text(encoding="utf-8"), REFERENCE)
+    state = read_state()
+    failures = 0
+    targets = detected_targets(state)
+    if not targets:
+        print("No VS Code or VSCodium user configuration directories found; skipped.")
+        return 0
+    for label, path in targets:
+        if not path.exists():
+            print(f"{label} Linux keybindings are not installed")
+            failures += 1
+            continue
+        bindings = parse_bindings(path.read_text(encoding="utf-8"), path)
+        missing = [binding for binding in reference if binding not in bindings]
+        entry = state["targets"].get(str(path))
+        owned = bool(
+            isinstance(entry, dict)
+            and isinstance(entry.get("installed_block"), str)
+            and entry["installed_block"] in path.read_text(encoding="utf-8")
+        )
+        if missing:
+            print(f"{label} is missing {len(missing)} reference binding(s)")
+            failures += 1
+        elif not owned:
+            print(f"{label} contains the bindings but they are not installer-managed")
+            failures += 1
+        else:
+            print(f"{label} installer-managed Linux keybindings are installed")
+    return 1 if failures else 0
+
+
+def main() -> int:
+    if len(sys.argv) != 2 or sys.argv[1] not in {"install", "uninstall", "check"}:
+        print(f"usage: {Path(sys.argv[0]).name} install|uninstall|check", file=sys.stderr)
+        return 2
+    try:
+        return {"install": install, "uninstall": uninstall, "check": check}[sys.argv[1]]()
+    except (OSError, ValueError, plistlib.InvalidFileException) as error:
+        print(f"error: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

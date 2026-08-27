@@ -2,6 +2,7 @@
 #
 # install-karabiner-config.sh [profile-name]
 # install-karabiner-config.sh --uninstall-keybindings
+# install-karabiner-config.sh --uninstall-editor-keybindings
 #
 # Installs this repo's Linux-style keyboard layout into Karabiner-Elements.
 #
@@ -10,6 +11,7 @@
 #      you must change by hand (verify-macos-setup.sh)
 #   3. merges the profile into your existing Karabiner config
 #   4. installs Linux-style native macOS text-editing bindings
+#   5. safely merges focus-aware VS Code/VSCodium keybindings when detected
 #
 # The profile is MERGED, not overwritten: any other profiles you already have
 # are left untouched. Only a profile with the chosen name is replaced.
@@ -26,12 +28,16 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO_CFG="$HERE/karabiner.json"
 VERIFY="$HERE/verify-macos-setup.sh"
 APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
+EDITOR_BINDINGS="$HERE/manage-editor-keybindings.py"
 LIVE_CFG="$HOME/.config/karabiner/karabiner.json"
 CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 DEFAULT_PROFILE="Linux"
 
 if [[ "${1:-}" == "--uninstall-keybindings" ]]; then
   exec "$APPKIT_BINDINGS" uninstall
+fi
+if [[ "${1:-}" == "--uninstall-editor-keybindings" ]]; then
+  exec "$EDITOR_BINDINGS" uninstall
 fi
 
 #-----------------------------------------------------------------------------#
@@ -52,6 +58,7 @@ fi
 
 [[ -f "$REPO_CFG" ]] || { echo "error: $REPO_CFG not found" >&2; exit 1; }
 [[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
+[[ -x "$EDITOR_BINDINGS" ]] || { echo "error: $EDITOR_BINDINGS not found or not executable" >&2; exit 1; }
 jq empty "$REPO_CFG" 2>/dev/null || { echo "error: $REPO_CFG is not valid JSON" >&2; exit 1; }
 
 if [[ ! -x "$CLI" ]]; then
@@ -186,4 +193,6 @@ echo "Active profile: $("$CLI" --show-current-profile-name)"
 echo
 "$APPKIT_BINDINGS" install
 echo
-echo "Done. Karabiner needs no restart; restart native apps for AppKit changes."
+"$EDITOR_BINDINGS" install
+echo
+echo "Done. Karabiner and editors need no restart; restart native apps for AppKit changes."

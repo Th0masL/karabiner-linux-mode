@@ -321,6 +321,7 @@ echo "[6/6] VS Code and VSCodium"
 # bindings, scoped with "when" clauses. vscode-keybindings.json in this repo is
 # the reference copy.
 REF="$HERE/vscode-keybindings.json"
+EDITOR_MANAGER="$HERE/manage-editor-keybindings.py"
 # Strip JSONC comments and trailing commas while preserving comment-like text
 # inside strings. Perl ships with the macOS versions supported by this project.
 strip_jsonc() {
@@ -379,6 +380,15 @@ check_code_bindings "VS Code" \
   "$HOME/Library/Application Support/Code/User/keybindings.json"
 check_code_bindings "VSCodium" \
   "$HOME/Library/Application Support/VSCodium/User/keybindings.json"
+
+if [[ -x "$EDITOR_MANAGER" ]]; then
+  if "$EDITOR_MANAGER" check >/dev/null 2>&1; then
+    ok "editor keybindings are installer-managed"
+  else
+    warn "editor keybindings are present but not installer-managed" \
+         "run ./install-karabiner-config.sh to adopt them safely"
+  fi
+fi
 
 echo
 printf '=== %d passed, %d warnings, %d failures ===\n' "$PASS" "$WARN" "$FAIL"
