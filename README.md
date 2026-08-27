@@ -228,7 +228,7 @@ and history search with no visible cause.
 ./verify-macos-setup.sh
 ```
 
-18 read-only checks across macOS shortcuts, Karabiner, zsh and VS Code. Run it
+20 read-only checks across macOS shortcuts, Karabiner, zsh and VS Code. Run it
 whenever something stops working. The usual cause is **Restore Defaults** in
 Keyboard Shortcuts, which resets every pane at once and is the only part of this
 setup not stored in a file you control.
@@ -252,7 +252,7 @@ setup not stored in a file you control.
 | `generate-karabiner.sh` | source of truth: the tables that build the rules |
 | `karabiner.json` | generated output |
 | `install-karabiner-config.sh` | list profiles, verify, merge |
-| `verify-macos-setup.sh` | 18 read-only checks |
+| `verify-macos-setup.sh` | 20 read-only checks |
 | `vscode-keybindings.json` | reference VS Code config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
 

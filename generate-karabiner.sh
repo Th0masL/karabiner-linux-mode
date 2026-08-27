@@ -98,7 +98,8 @@ rule() {
 #=============================================================================#
 while read -r key meaning; do
   [[ -z "${key:-}" || "$key" == \#* ]] && continue
-  rule "terminal: [1]+${key^^} sends ^${key^^} ($meaning)" \
+  upper="$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')"
+  rule "terminal: [1]+${upper} sends ^${upper} ($meaning)" \
        "$(man "$key" command "$key" left_control "$IF_TERM")"
 done <<'TABLE'
 c   interrupt

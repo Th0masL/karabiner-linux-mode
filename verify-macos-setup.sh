@@ -75,10 +75,15 @@ echo
 echo "[1/5] Keyboard Shortcuts"
 
 if ! build_helper; then
-  warn "cannot read macOS keyboard shortcuts" "clang missing -- run: xcode-select --install"
+  warn "cannot read macOS keyboard shortcuts" \
+       "the read-only helper did not compile; ensure Xcode Command Line Tools are installed and compatible with this macOS version"
   DUMP=""
 else
   DUMP="$("$HELPER")"
+  if [[ -z "$DUMP" ]]; then
+    warn "macOS keyboard shortcut query returned no data" \
+         "the private SkyLight getter may have changed; shortcut checks were skipped"
+  fi
 fi
 
 if [[ -n "$DUMP" ]]; then
@@ -114,23 +119,25 @@ if [[ -n "$DUMP" ]]; then
 
   # Window management is expected on [1]+[3]+arrow (0x980000 = cmd+opt+fn).
   check_wm() {
-    local id="$1" label="$2" st mods
+    local id="$1" label="$2" expected_vk="$3" st vk mods
     st="$(awk -F'\t' -v i="$id" '$1==i {print $2}' <<< "$DUMP")"
+    vk="$(awk -F'\t' -v i="$id" '$1==i {print $3}' <<< "$DUMP")"
     mods="$(awk -F'\t' -v i="$id" '$1==i {print $4}' <<< "$DUMP")"
     if [[ -z "$st" ]]; then
       warn "$label not found" "expected on [1]+[3]+arrow"
-    elif [[ "$st" == "1" && "$mods" == "0x980000" ]]; then
+    elif [[ "$st" == "1" && "$mods" == "0x980000" && "$vk" == "$expected_vk" ]]; then
       ok "$label on [1]+[3]+arrow"
     elif [[ "$st" != "1" ]]; then
       warn "$label is disabled" "re-enable it in Keyboard Shortcuts > Mission Control"
     else
-      warn "$label is on an unexpected combination ($mods)" "expected [1]+[3]+arrow"
+      warn "$label is on an unexpected combination (key code $vk, modifiers $mods)" \
+           "expected key code $expected_vk with [1]+[3]"
     fi
   }
-  check_wm 32 "Mission Control"
-  check_wm 33 "Application windows"
-  check_wm 79 "Move left a space"
-  check_wm 81 "Move right a space"
+  check_wm 32 "Mission Control" 126
+  check_wm 33 "Application windows" 125
+  check_wm 79 "Move left a space" 123
+  check_wm 81 "Move right a space" 124
 fi
 
 echo
@@ -144,8 +151,9 @@ echo "[2/5] Modifier Keys at the macOS level"
 # in System Settings and stripping it from karabiner.json. So these are
 # warnings, not failures. The point is that you know it is there.
 #
-# Caveat: macOS 26 no longer stores this in ~/Library/Preferences/ByHost, so
-# detection is best-effort and can miss a remap set through System Settings.
+# Storage varies across macOS versions and keyboard types. The persisted check
+# below inspects modifiermapping keys inside every ByHost plist rather than
+# assuming the mapping appears in a plist filename.
 
 KARABINER_ROT=0
 if [[ -f "$LIVE" ]] && jq empty "$LIVE" 2>/dev/null; then
@@ -162,17 +170,53 @@ if [[ -n "$HID" && "$HID" != "(null)" ]]; then
 else
   ok "no hidutil-level key remapping"
 fi
-if find "$HOME/Library/Preferences/ByHost" -iname '*modifiermapping*' 2>/dev/null | grep -q .; then
+PERSISTED_REMAPS=""
+STALE_REMAPS=""
+ACTIVE_HANDLER_IDS="$(ioreg -l -w0 2>/dev/null \
+  | awk -F'= ' '/"alt_handler_id" = [0-9]+/ {print $2}' \
+  | sort -u)"
+while IFS= read -r plist; do
+  while IFS= read -r mapping_key; do
+    if /usr/libexec/PlistBuddy -c "Print :$mapping_key" "$plist" 2>/dev/null \
+       | awk '
+           /Dict \{/ {src = dst = ""}
+           /HIDKeyboardModifierMappingSrc =/ {src = $3}
+           /HIDKeyboardModifierMappingDst =/ {dst = $3}
+           /^[[:space:]]*}/ {
+             if (src != "" && dst != "" && src != dst) different = 1
+           }
+           END {exit !different}
+         '; then
+      # alt_handler_id values are assigned to currently attached HID handlers.
+      # System Settings can leave old entries behind after a keyboard is
+      # disconnected; those cannot affect input and Restore Defaults cannot
+      # remove them because the keyboard no longer appears in the dropdown.
+      if [[ "$mapping_key" == *alt_handler_id-* ]] \
+         && ! grep -qxF "${mapping_key##*-}" <<< "$ACTIVE_HANDLER_IDS"; then
+        STALE_REMAPS+="${STALE_REMAPS:+, }$mapping_key"
+      else
+        PERSISTED_REMAPS+="${PERSISTED_REMAPS:+, }$mapping_key"
+      fi
+    fi
+  done < <(plutil -p "$plist" 2>/dev/null \
+            | sed -n 's/^  "\(com\.apple\.keyboard\.modifiermapping\.[^"]*\)" =>.*/\1/p')
+done < <(find "$HOME/Library/Preferences/ByHost" -type f -name '*.plist' 2>/dev/null)
+
+if [[ -n "$PERSISTED_REMAPS" ]]; then
   MACOS_REMAP=1
-  warn "a per-keyboard Modifier Keys remap is set in System Settings" \
-       "Keyboard Shortcuts > Modifier Keys > Restore Defaults, for EVERY keyboard in the dropdown"
+  warn "per-keyboard Modifier Keys remapping is persisted: $PERSISTED_REMAPS" \
+       "Keyboard Shortcuts > Modifier Keys > Restore Defaults, for EVERY keyboard in the dropdown (including disconnected keyboards)"
 else
-  ok "no per-keyboard Modifier Keys remap detected (best-effort on macOS 26+)"
+  if [[ -n "$STALE_REMAPS" ]]; then
+    ok "no active per-keyboard Modifier Keys remap (ignored stale: $STALE_REMAPS)"
+  else
+    ok "no per-keyboard Modifier Keys remap detected (best-effort on macOS 26+)"
+  fi
 fi
 
 if [[ "$MACOS_REMAP" == "1" && "$KARABINER_ROT" != "0" ]]; then
-  warn "BOTH macOS and Karabiner are remapping modifiers" \
-       "they compose: [1] is rotated twice and lands on the wrong modifier. Pick one place"
+  warn "macOS modifier remapping and Karabiner rotation were both found" \
+       "on an affected keyboard they compose, rotating [1] twice. Restore defaults for every keyboard unless this is deliberate"
 elif [[ "$MACOS_REMAP" == "1" ]]; then
   warn "the rotation looks like it is done at the macOS level, not in Karabiner" \
        "supported, but not what this repo ships. The rules assume [1]=Command, [2]=Control, [3]=Option"
@@ -191,29 +235,45 @@ CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 if [[ ! -x "$CLI" ]]; then
   bad "Karabiner-Elements is not installed" "https://karabiner-elements.pqrs.org"
 else
-  pgrep -qf karabiner_console_user_server \
-    && ok "Karabiner daemon running" \
-    || bad "Karabiner daemon is not running" "grant Input Monitoring and enable the driver extension"
+  if pgrep -qf karabiner_console_user_server; then
+    ok "Karabiner daemon running"
+  else
+    bad "Karabiner daemon is not running" \
+        "grant Input Monitoring and enable the driver extension"
+  fi
   cur="$("$CLI" --show-current-profile-name 2>/dev/null)"
-  [[ "$cur" == "$PROFILE" ]] \
-    && ok "active profile is '$PROFILE'" \
-    || warn "active profile is '$cur'" "expected '$PROFILE'"
+  if [[ "$cur" == "$PROFILE" ]]; then
+    ok "active profile is '$PROFILE'"
+  else
+    warn "active profile is '$cur'" "expected '$PROFILE'"
+  fi
 fi
 if [[ -f "$LIVE" ]] && jq empty "$LIVE" 2>/dev/null; then
-  found="$(jq -r --arg name "$PROFILE" '
-    [ (.profiles // [])[] | select(.name == $name) ] as $p
-    | if ($p | length) == 0 then "MISSING"
-      else "\((($p[0].simple_modifications) // []) | length)\t\((($p[0].complex_modifications.rules) // []) | length)"
+  actual="$(jq -S -c --arg name "$PROFILE" '
+    [(.profiles // [])[] | select(.name == $name)][0] // null
+    | if . == null then null else
+        del(.selected)
+        | .simple_modifications = ((.simple_modifications // []) | sort_by(.from.key_code))
       end' "$LIVE")"
-  if [[ "$found" == "MISSING" ]]; then
+  expected="$(jq -S -c --arg name "$PROFILE" '
+    [(.profiles // [])[] | select(.name != "Default")][0] // null
+    | if . == null then null else
+        .name = $name
+        | del(.selected)
+        | .simple_modifications = ((.simple_modifications // []) | sort_by(.from.key_code))
+      end' "$HERE/karabiner.json")"
+  if [[ "$actual" == "null" ]]; then
     bad "profile '$PROFILE' is not in the live config" "run ./install-karabiner-config.sh"
+  elif [[ "$expected" == "null" ]]; then
+    bad "reference layout profile is missing from $HERE/karabiner.json" \
+        "regenerate karabiner.json before verifying"
+  elif [[ "$actual" == "$expected" ]]; then
+    rot="$(jq '(.simple_modifications // []) | length' <<< "$actual")"
+    nrules="$(jq '(.complex_modifications.rules // []) | length' <<< "$actual")"
+    ok "profile '$PROFILE' exactly matches the repository ($rot rotations, $nrules rules)"
   else
-    rot="${found%%	*}"; nrules="${found##*	}"
-    if [[ "$rot" == "3" ]]; then
-      ok "the [1]/[2]/[3] rotation is present ($nrules rules loaded)"
-    else
-      bad "expected 3 modifier rotations, found $rot" "run ./install-karabiner-config.sh"
-    fi
+    bad "profile '$PROFILE' differs from the repository layout" \
+        "run ./install-karabiner-config.sh to replace the drifted profile"
   fi
 else
   warn "could not read the live Karabiner config" "is $LIVE valid JSON?"
@@ -221,15 +281,26 @@ fi
 
 echo
 echo "[4/5] zsh key bindings"
-BOUND="$(zsh -ic 'bindkey "^[[1;5A"; bindkey "^[[1;5D"' 2>/dev/null)"
-grep -q "history-beginning-search" <<< "$BOUND" \
-  && ok "[1]+Up/Down history prefix search is bound" \
-  || warn "history prefix search is not bound in zsh" \
-          "append the lines from $HERE/zshrc-snippet.zsh to ~/.zshrc"
-grep -q "backward-word" <<< "$BOUND" \
-  && ok "[1]+Left/Right word movement is bound" \
-  || warn "word movement is not bound in zsh" \
-          "append the lines from $HERE/zshrc-snippet.zsh to ~/.zshrc"
+BOUND="$(zsh -ic '
+  bindkey "^[[1;5A"
+  bindkey "^[[1;5B"
+  bindkey "^[[1;5C"
+  bindkey "^[[1;5D"' 2>/dev/null)"
+check_zsh_binding() {
+  local sequence="$1" label="$2" widget_pattern="$3"
+  if grep -F "$sequence" <<< "$BOUND" | grep -Eq "$widget_pattern"; then
+    ok "$label is bound"
+  else
+    warn "$label is not correctly bound in zsh" \
+         "append the lines from $HERE/zshrc-snippet.zsh to ~/.zshrc"
+  fi
+}
+check_zsh_binding '"^[[1;5A"' "[1]+Up history prefix search" \
+                  'history-beginning-search-backward(-end)?$'
+check_zsh_binding '"^[[1;5B"' "[1]+Down history prefix search" \
+                  'history-beginning-search-forward(-end)?$'
+check_zsh_binding '"^[[1;5C"' "[1]+Right word movement" 'forward-word$'
+check_zsh_binding '"^[[1;5D"' "[1]+Left word movement" 'backward-word$'
 
 echo
 echo "[5/5] VS Code"
@@ -240,7 +311,14 @@ echo "[5/5] VS Code"
 # the reference copy.
 VSC="$HOME/Library/Application Support/Code/User/keybindings.json"
 REF="$HERE/vscode-keybindings.json"
-strip_jsonc() { sed -e 's|^[[:space:]]*//.*$||' -e 's|[[:space:]]//[^"]*$||' "$1"; }
+# Strip JSONC comments and trailing commas while preserving comment-like text
+# inside strings. Perl ships with the macOS versions supported by this project.
+strip_jsonc() {
+  perl -0777 -pe '
+    s~("(?:\\.|[^"\\])*")|//[^\r\n]*|/\*.*?\*/~$1 // ""~gse;
+    s~("(?:\\.|[^"\\])*")|,(\s*[}\]])~$1 // $2~gse;
+  ' "$1"
+}
 
 if [[ ! -f "$VSC" ]]; then
   warn "no VS Code keybindings.json" \
@@ -257,9 +335,9 @@ else
     warn "no reference file at $REF" "cannot check which bindings are expected"
   else
     MISSING="$(jq -rn \
-      --argjson ref "$(strip_jsonc "$REF" | jq '[.[] | {key, command, when}]')" \
-      --argjson liv "$(strip_jsonc "$VSC" | jq '[.[] | {key, command, when}]')" \
-      '($ref - $liv)[] | "\(.key) -> \(.command)"')"
+      --argjson ref "$(strip_jsonc "$REF" | jq '[.[] | {key, command, args, when}]')" \
+      --argjson liv "$(strip_jsonc "$VSC" | jq '[.[] | {key, command, args, when}]')" \
+      '($ref - $liv)[] | "\(.key) -> \(.command) (including args and when clause)"')"
     if [[ -z "$MISSING" ]]; then
       ok "all bindings from the reference config are present"
     else
