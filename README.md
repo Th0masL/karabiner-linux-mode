@@ -67,7 +67,7 @@ Everything after the positional remapping is exception handling:
 | macOS Keyboard Shortcuts | workspaces and Mission Control, moved to `[1]+[3]`+arrow |
 | AppKit `DefaultKeyBinding.dict` | Linux-style navigation, selection and word deletion in native editors |
 | `~/.zshrc` | 4 `bindkey` lines |
-| VS Code/VSCodium `keybindings.json` | 25 focus-aware bindings |
+| VS Code/VSCodium `keybindings.json` | 40 focus-aware bindings |
 
 **The remapping must live in Karabiner, not in the macOS Modifier Keys pane.**
 Set in both places it applies twice, and `[1]` ends up as Option. The Karabiner

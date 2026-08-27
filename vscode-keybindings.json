@@ -31,6 +31,34 @@
     "args": { "text": "\u0017" }, "when": "terminalFocus" },   // delete word back
   { "key": "cmd+r", "command": "workbench.action.terminal.sendSequence",
     "args": { "text": "\u0012" }, "when": "terminalFocus" },   // reverse history search
+  { "key": "cmd+d", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0004" }, "when": "terminalFocus" },   // delete character / EOF
+  { "key": "cmd+l", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u000c" }, "when": "terminalFocus" },   // clear screen
+  { "key": "cmd+y", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0019" }, "when": "terminalFocus" },   // yank killed text
+  { "key": "cmd+g", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0007" }, "when": "terminalFocus" },   // cancel current input
+  { "key": "cmd+t", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0014" }, "when": "terminalFocus" },   // transpose characters
+  { "key": "cmd+p", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0010" }, "when": "terminalFocus" },   // previous history entry
+  { "key": "cmd+n", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u000e" }, "when": "terminalFocus" },   // next history entry
+  { "key": "cmd+b", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0002" }, "when": "terminalFocus" },   // move one character left
+  { "key": "cmd+f", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0006" }, "when": "terminalFocus" },   // move one character right
+  { "key": "cmd+v", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0016" }, "when": "terminalFocus" },   // insert next key literally
+  { "key": "cmd+h", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0008" }, "when": "terminalFocus" },   // delete previous character
+  { "key": "cmd+q", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0011" }, "when": "terminalFocus" },   // resume terminal output
+  { "key": "cmd+s", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0013" }, "when": "terminalFocus" },   // pause terminal output
+  { "key": "cmd+o", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u000f" }, "when": "terminalFocus" },   // execute history entry and load next
   { "key": "cmd+backspace", "command": "workbench.action.terminal.sendSequence",
     "args": { "text": "\u0017" }, "when": "terminalFocus" },   // delete word back
   { "key": "cmd+delete", "command": "workbench.action.terminal.sendSequence",
