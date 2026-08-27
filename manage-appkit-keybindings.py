@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install, check, or remove this project's AppKit Home/End bindings."""
+"""Install, check, or remove this project's native AppKit editing bindings."""
 
 from __future__ import annotations
 
@@ -35,6 +35,9 @@ MANAGED = {
     "@\uf72b": "moveToEndOfDocument:",
     "@$\uf729": "moveToBeginningOfDocumentAndModifySelection:",
     "@$\uf72b": "moveToEndOfDocumentAndModifySelection:",
+    # [1]+Fn+Delete produces Command+Forward-Delete after the positional
+    # remapping. AppKit has no useful default for that combination.
+    "@\uf728": "deleteWordForward:",
 }
 
 
@@ -111,7 +114,7 @@ def install() -> int:
     write_plist(TARGET, bindings)
 
     verb = "Installed" if changed else "Confirmed"
-    print(f"{verb} AppKit Home/End bindings -> {TARGET}")
+    print(f"{verb} AppKit Linux-editing bindings -> {TARGET}")
     print("Restart open native applications (including Notes) before testing.")
     return 0
 
@@ -156,7 +159,7 @@ def uninstall() -> int:
     except OSError:
         pass
 
-    print(f"Removed installer-managed AppKit Home/End bindings from {TARGET}")
+    print(f"Removed installer-managed AppKit Linux-editing bindings from {TARGET}")
     if preserved_changes:
         print(
             "Preserved bindings changed after installation: "
@@ -168,14 +171,14 @@ def uninstall() -> int:
 
 def check() -> int:
     if not STATE.exists() or not TARGET.exists():
-        print("AppKit Home/End bindings are not installed")
+        print("AppKit Linux-editing bindings are not installed")
         return 1
     bindings = read_plist(TARGET)
     missing = [key for key, value in MANAGED.items() if bindings.get(key) != value]
     if missing:
-        print(f"AppKit Home/End bindings differ at {len(missing)} managed key(s)")
+        print(f"AppKit Linux-editing bindings differ at {len(missing)} managed key(s)")
         return 1
-    print("AppKit Home/End bindings are installed")
+    print("AppKit Linux-editing bindings are installed")
     return 0
 
 

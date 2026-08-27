@@ -100,6 +100,32 @@ shell_man() {
     + {to: [{shell_command: $cmd}]}'
 }
 
+# escape_man <from_key> <from_mods> <following_key> <conditions_json>
+# Emits an ESC-prefixed terminal command without depending on whether a
+# terminal is configured to treat Option as Meta.
+escape_man() {
+  jq -c -n --arg fk "$1" --arg fm "$2" --arg tk "$3" --argjson c "$4" '
+    {type: "basic"}
+    + (if ($c | length) > 0 then {conditions: $c} else {} end)
+    + {from: {key_code: $fk, modifiers: {mandatory: ($fm | split("+"))}}}
+    + {to: [{key_code: "escape"}, {key_code: $tk}]}'
+}
+
+# forward_delete_man <from_key> <from_mods> <conditions_json>
+# Emits the standard xterm Forward Delete sequence: ESC [ 3 ~.
+forward_delete_man() {
+  jq -c -n --arg fk "$1" --arg fm "$2" --argjson c "$3" '
+    {type: "basic"}
+    + (if ($c | length) > 0 then {conditions: $c} else {} end)
+    + {from: {key_code: $fk, modifiers: {mandatory: ($fm | split("+"))}}}
+    + {to: [
+        {key_code: "escape"},
+        {key_code: "open_bracket"},
+        {key_code: "3"},
+        {key_code: "grave_accent_and_tilde", modifiers: ["left_shift"]}
+      ]}'
+}
+
 # rule <description> <manipulator-json>...
 rule() {
   local desc="$1"; shift
@@ -128,8 +154,17 @@ w   delete word back
 r   reverse history search
 TABLE
 
-# Linux deletes a word with Ctrl+Backspace in a terminal; ^W is the readline
-# equivalent. VS Code's keybindings.json does the same, so both terminals agree.
+# Linux Ctrl+Delete deletes the next word. ESC-d is the standard Emacs-mode
+# shell command for that action and works independently of terminal settings.
+# Keep this before the less-specific [1]+Backspace rule below.
+rule "terminal: [1]+Fn+Backspace deletes the next word" \
+     "$(escape_man delete_or_backspace command+fn d "$IF_TERM")"
+
+rule "terminal: Fn+Backspace sends Forward Delete" \
+     "$(forward_delete_man delete_or_backspace fn "$IF_TERM")"
+
+# Linux deletes a previous word with Ctrl+Backspace in a terminal; ^W is the
+# readline equivalent. VS Code's keybindings.json does the same.
 rule "terminal: [1]+Backspace deletes the previous word" \
      "$(man delete_or_backspace command w left_control "$IF_TERM")"
 
@@ -186,6 +221,12 @@ rule "editing: [1]+arrows move by word" \
 rule "editing: [1]+Shift+arrows select by word" \
      "$(man left_arrow  command+shift left_arrow  left_option+left_shift "$UNLESS_TERM_EDITOR")" \
      "$(man right_arrow command+shift right_arrow left_option+left_shift "$UNLESS_TERM_EDITOR")"
+
+# Fn+Backspace becomes Forward-Delete only after Karabiner's complex rules have
+# run, so browsers need an explicit pre-conversion rule for compact keyboards.
+# Native AppKit editors use the equivalent DefaultKeyBinding.dict entry.
+rule "editing: [1]+Fn+Backspace deletes the next word in browsers" \
+     "$(man delete_or_backspace command+fn delete_forward left_option "$IF_BROWSER")"
 
 rule "editing: [1]+Backspace / [1]+Del delete a word" \
      "$(man delete_or_backspace command delete_or_backspace left_option "$UNLESS_TERM_EDITOR")" \

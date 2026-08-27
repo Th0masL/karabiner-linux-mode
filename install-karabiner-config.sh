@@ -9,7 +9,7 @@
 #   2. checks the macOS-side settings the layout depends on, reporting anything
 #      you must change by hand (verify-macos-setup.sh)
 #   3. merges the profile into your existing Karabiner config
-#   4. installs Linux-style Home/End bindings for native macOS text editors
+#   4. installs Linux-style native macOS text-editing bindings
 #
 # The profile is MERGED, not overwritten: any other profiles you already have
 # are left untouched. Only a profile with the chosen name is replaced.
@@ -186,4 +186,4 @@ echo "Active profile: $("$CLI" --show-current-profile-name)"
 echo
 "$APPKIT_BINDINGS" install
 echo
-echo "Done. Karabiner needs no restart; restart native apps for Home/End changes."
+echo "Done. Karabiner needs no restart; restart native apps for AppKit changes."

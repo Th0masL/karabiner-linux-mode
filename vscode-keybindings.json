@@ -33,6 +33,8 @@
     "args": { "text": "\u0012" }, "when": "terminalFocus" },   // reverse history search
   { "key": "cmd+backspace", "command": "workbench.action.terminal.sendSequence",
     "args": { "text": "\u0017" }, "when": "terminalFocus" },   // delete word back
+  { "key": "cmd+delete", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001bd" }, "when": "terminalFocus" }, // delete word forward
 
   // ---- TERMINAL: arrows -> the escape sequences your .zshrc binds ----
   { "key": "cmd+up", "command": "workbench.action.terminal.sendSequence",

@@ -65,7 +65,7 @@ Everything after the positional remapping is exception handling:
 | Karabiner `simple_modifications` | the five positional mappings |
 | Karabiner `complex_modifications` | terminal control characters, windows and navigation |
 | macOS Keyboard Shortcuts | workspaces and Mission Control, moved to `[1]+[3]`+arrow |
-| AppKit `DefaultKeyBinding.dict` | Linux-style Home/End in native text editors |
+| AppKit `DefaultKeyBinding.dict` | Linux-style Home/End and forward word deletion in native editors |
 | `~/.zshrc` | 4 `bindkey` lines |
 | VS Code/VSCodium `keybindings.json` | 25 focus-aware bindings |
 
@@ -144,6 +144,8 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Kill before / after cursor | `Ctrl+U` / `Ctrl+K` | `Ctrl+U` / `Ctrl+K` | `[1]+U` / `[1]+K` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
 | Delete word back | `Ctrl+Backspace` | `Option+Delete` (`⌫`) | `[1]+Backspace` (`[1]+⌫` on a Magic Keyboard) |
+| Delete word forward | `Ctrl+Delete` | `Meta+D` | `[1]+Fn+Backspace` (`[1]+Fn+⌫`) |
+| Delete one character forward | `Delete` | `Forward Delete` | `Fn+Backspace` (`Fn+⌫`) |
 | Reverse history search | `Ctrl+R` | `Ctrl+R` | `[1]+R` |
 | History prefix search | *(no default)* | *(no default)* | `[1]+↑/↓` |
 | Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
@@ -197,8 +199,8 @@ cd karabiner-linux-mode
 It lists your Karabiner profiles, asks which to install into (default `Linux`),
 runs the macOS checks, then merges the profile. Your other profiles are left
 alone and the previous config is backed up. It also safely merges Linux-style
-Home/End behavior into `~/Library/KeyBindings/DefaultKeyBinding.dict`. Restart
-open native applications such as Notes after installation.
+native editing behavior into `~/Library/KeyBindings/DefaultKeyBinding.dict`.
+Restart open native applications such as Notes after installation.
 
 To remove only the installer-managed AppKit bindings and restore any values
 that existed before installation:
@@ -289,7 +291,7 @@ setup not stored in a file you control.
 | `generate-karabiner.sh` | source of truth: the tables that build the rules |
 | `karabiner.json` | generated output |
 | `install-karabiner-config.sh` | list profiles, verify, merge |
-| `manage-appkit-keybindings.py` | safely install/remove native Home/End bindings |
+| `manage-appkit-keybindings.py` | safely install/remove native editing bindings |
 | `verify-macos-setup.sh` | 24 read-only checks |
 | `vscode-keybindings.json` | reference VS Code config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
