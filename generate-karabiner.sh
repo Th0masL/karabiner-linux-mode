@@ -170,12 +170,16 @@ rule "editing: [1]+Tab / [1]+Shift+Tab cycles tabs" \
 
 #=============================================================================#
 # 4. WINDOWS AND DESKTOP
+#
+# "Backtick" is the unshifted key above Tab (grave_accent_and_tilde). Named
+# rather than written literally: a backtick breaks markdown code spans and is
+# command substitution inside a double-quoted shell string.
 #=============================================================================#
 rule "window: [3]+Tab switches applications" \
      "$(man tab option       tab left_command            "$ANYWHERE")" \
      "$(man tab option+shift tab left_command+left_shift "$ANYWHERE")"
 
-rule "window: [3]+~ cycles windows of the current application" \
+rule "window: [3]+Backtick cycles windows of the current application" \
      "$(man grave_accent_and_tilde option       grave_accent_and_tilde left_command            "$ANYWHERE")" \
      "$(man grave_accent_and_tilde option+shift grave_accent_and_tilde left_command+left_shift "$ANYWHERE")"
 
@@ -214,6 +218,11 @@ NEW="$(jq -s --arg name "$PROFILE_NAME" '
         selected: true,
         virtual_hid_keyboard: {keyboard_type_v2: "ansi"},
         simple_modifications: [
+          # Left side only, deliberately. Rules match modifiers side-agnostically
+          # and [1] produces Command, so the untouched Right Command already
+          # behaves exactly like [1]; likewise Right Option and [3]. Rotating the
+          # right side would turn Right Command into Option, costing you the
+          # right-hand [1] to gain [2], which this layout uses twice. Do not.
           {from: {key_code: "left_control"}, to: [{key_code: "left_command"}]},
           {from: {key_code: "left_option"},  to: [{key_code: "left_control"}]},
           {from: {key_code: "left_command"}, to: [{key_code: "left_option"}]}

@@ -1401,7 +1401,7 @@
             ]
           },
           {
-            "description": "window: [3]+~ cycles windows of the current application",
+            "description": "window: [3]+Backtick cycles windows of the current application",
             "manipulators": [
               {
                 "type": "basic",

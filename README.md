@@ -8,11 +8,12 @@ word. `Alt+Tab` switches windows. `Ctrl+Alt+←/→` rotates workspaces.
 
 ## Notation: [1] [2] [3]
 
-Once you rotate the modifiers, the printed labels are misleading, so everything
-here is described by position.
+Once you rotate the modifiers, the printed labels are misleading, so the three
+modifier keys are referred to by position. The brackets mark a modifier
+position, so `[3]+1` means "the third modifier plus the 1 key".
 
 ```
-        [1]        [2]        [3]        spacebar
+        [1]       [2]        [3]      spacebar
 PC:    Ctrl      Super       Alt
 Mac:  Control    Option    Command
 ```
@@ -20,6 +21,31 @@ Mac:  Control    Option    Command
 Left to right, ignoring `fn`. **Position 1 is the same key on both platforms.**
 What differs is what the OS binds to it: Linux puts copy/paste/save on position
 1, macOS puts them on position 3.
+
+### Only the left side is remapped, on purpose
+
+The rotation touches `left_control`, `left_option` and `left_command` only. The
+right-hand modifiers keep their native macOS behaviour, and that is deliberate
+rather than an oversight.
+
+The rules match modifiers without caring which side they came from, and `[1]`
+produces Command while `[3]` produces Option. So the untouched right-hand keys
+already behave identically to their left-hand counterparts:
+
+| Key | Stays as | Behaves as |
+|---|---|---|
+| Right Command | Command | `[1]` |
+| Right Option | Option | `[3]` |
+| Right Control | *does not exist on Apple keyboards* | nothing plays `[2]` |
+
+Rotating the right side as well would trade that away. `right_command` would
+become Option and `right_option` would become Control, giving you `[2]` and
+`[3]` on the right instead of `[1]` and `[3]`. That means losing the right-hand
+`[1]`, by far the most used modifier, to gain `[2]`, which this layout uses for
+exactly two shortcuts. Not worth it.
+
+Real Control therefore lives only at `[2]`, which is fine: Apple keyboards have
+no right Control key to put it on anyway.
 
 ## The idea
 
@@ -58,6 +84,101 @@ frontmost, not whether focus is in the editor or the integrated terminal. Those
 need opposite behaviour for the same key: `[1]+C` must copy in the editor and
 interrupt in the terminal. Only VS Code can tell them apart, using `when`
 clauses.
+
+## The full mapping
+
+Every combination this repo touches. The Linux and macOS columns show the
+**default** shortcut as printed on the keys; the last column is what you press
+after installing.
+
+### Clipboard, files, app-level
+
+These need no rules at all. The rotation alone puts them on `[1]`.
+
+| Action | Linux | macOS | Here |
+|---|---|---|---|
+| Copy | `Ctrl+C` | `Cmd+C` | `[1]+C` |
+| Cut | `Ctrl+X` | `Cmd+X` | `[1]+X` |
+| Paste | `Ctrl+V` | `Cmd+V` | `[1]+V` |
+| Select all | `Ctrl+A` | `Cmd+A` | `[1]+A` |
+| Undo | `Ctrl+Z` | `Cmd+Z` | `[1]+Z` |
+| Redo | `Ctrl+Shift+Z` | `Cmd+Shift+Z` | `[1]+Shift+Z` |
+| Save | `Ctrl+S` | `Cmd+S` | `[1]+S` |
+| Open | `Ctrl+O` | `Cmd+O` | `[1]+O` |
+| New | `Ctrl+N` | `Cmd+N` | `[1]+N` |
+| Print | `Ctrl+P` | `Cmd+P` | `[1]+P` |
+| Find | `Ctrl+F` | `Cmd+F` | `[1]+F` |
+| Close tab | `Ctrl+W` | `Cmd+W` | `[1]+W` |
+| Quit app | `Ctrl+Q` | `Cmd+Q` | `[1]+Q` |
+| New tab | `Ctrl+T` | `Cmd+T` | `[1]+T` |
+| Reload page | `Ctrl+R` | `Cmd+R` | `[1]+R` |
+| Address bar | `Ctrl+L` | `Cmd+L` | `[1]+L` |
+| Toggle comment | `Ctrl+/` | `Cmd+/` | `[1]+/` |
+
+### Text navigation
+
+Karabiner rules, because macOS puts these on Option rather than Control.
+
+| Action | Linux | macOS | Here |
+|---|---|---|---|
+| Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
+| Select by word | `Ctrl+Shift+←/→` | `Option+Shift+←/→` | `[1]+Shift+←/→` |
+| Delete word left | `Ctrl+Backspace` | `Option+Backspace` | `[1]+Backspace` |
+| Delete word right | `Ctrl+Delete` | `Fn+Option+Backspace` | `[1]+Del` |
+| Next / previous tab | `Ctrl+Tab` / `Ctrl+Shift+Tab` | `Ctrl+Tab` | `[1]+Tab` / `[1]+Shift+Tab` |
+| Line start / end | `Home` / `End` | `Cmd+←/→` | `Fn+←/→` |
+| Document start / end | `Ctrl+Home` / `Ctrl+End` | `Cmd+↑/↓` | `[1]+↑/↓` |
+
+### Terminal
+
+Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
+`~/.zshrc` for the arrows.
+
+| Action | Linux | macOS | Here |
+|---|---|---|---|
+| Interrupt | `Ctrl+C` | `Ctrl+C` | `[1]+C` |
+| Suspend | `Ctrl+Z` | `Ctrl+Z` | `[1]+Z` |
+| EOF | `Ctrl+D` | `Ctrl+D` | `[2]+D` *(left alone on purpose)* |
+| Start / end of line | `Ctrl+A` / `Ctrl+E` | `Ctrl+A` / `Ctrl+E` | `[1]+A` / `[1]+E` |
+| Kill before / after cursor | `Ctrl+U` / `Ctrl+K` | `Ctrl+U` / `Ctrl+K` | `[1]+U` / `[1]+K` |
+| Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
+| Delete word back | `Ctrl+Backspace` | `Option+Backspace` | `[1]+Backspace` |
+| Reverse history search | `Ctrl+R` | `Ctrl+R` | `[1]+R` |
+| History prefix search | *(no default)* | *(no default)* | `[1]+↑/↓` |
+| Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
+| Copy | `Ctrl+Shift+C` | `Cmd+C` | `[1]+Shift+C` |
+| Paste | `Ctrl+Shift+V` | `Cmd+V` | `[1]+Shift+V` |
+| New tab | `Ctrl+Shift+T` | `Cmd+T` | `[1]+Shift+T` |
+| Next / previous tab | `Ctrl+PgUp` / `Ctrl+PgDn` | `Cmd+Shift+]` / `Cmd+Shift+[` | `[1]+Tab` / `[1]+Shift+Tab` |
+| Jump to tab N | `Alt+1`..`9` | `Cmd+1`..`9` | `[3]+1`..`9` |
+
+### Windows and desktop
+
+Karabiner rules, except the last three, which are macOS Keyboard Shortcuts you
+rebind by hand.
+
+| Action | Linux | macOS | Here |
+|---|---|---|---|
+| App switcher | `Alt+Tab` | `Cmd+Tab` | `[3]+Tab` |
+| Cycle windows of current app | `Alt+Backtick` | `Cmd+Backtick` | `[3]+Backtick` |
+| Close window | `Alt+F4` | `Cmd+W` | `[3]+F4` |
+| Lock screen | `Super+L` | `Ctrl+Cmd+Q` | `[2]+L` |
+| Open a terminal | `Ctrl+Alt+T` | *(no default)* | `[1]+[3]+T` |
+| Screenshot | `PrtSc` | `Cmd+Shift+3` | `[1]+Shift+3` |
+| Switch workspace | `Ctrl+Alt+←/→` | `Ctrl+←/→` | `[1]+[3]+←/→` |
+| Overview | `Super` | `Ctrl+↑` | `[1]+[3]+↑` |
+| All windows of current app | *(varies)* | `Ctrl+↓` | `[1]+[3]+↓` |
+
+### Function keys
+
+Every F-key rule requires `Fn`, so brightness, Mission Control and dictation
+still work on a plain press.
+
+| Action | Linux | macOS | Here |
+|---|---|---|---|
+| Help | `F1` | `Cmd+Shift+/` | `Fn+F1` |
+| Find next | `F3` | `Cmd+G` | `Fn+F3` |
+| Reload page | `F5` | `Cmd+R` | `Fn+F5` |
 
 ## Install
 
@@ -112,52 +233,10 @@ whenever something stops working. The usual cause is **Restore Defaults** in
 Keyboard Shortcuts, which resets every pane at once and is the only part of this
 setup not stored in a file you control.
 
-## The mapping
-
-### Apps
-
-| Keys | Action |
-|---|---|
-| `[1]+C/X/V/A/Z/S/O/N/P/F/W/Q/T` | the usual clipboard and file shortcuts |
-| `[1]+←/→` | move by word |
-| `[1]+Shift+←/→` | select by word |
-| `[1]+Backspace` / `[1]+Del` | delete word left / right |
-| `[1]+Tab` / `[1]+Shift+Tab` | next / previous tab |
-| `Fn+F1` / `Fn+F3` / `Fn+F5` | Help / Find Next / reload |
-
-### Terminal
-
-| Keys | Action |
-|---|---|
-| `[1]+C` / `[1]+Z` | interrupt / suspend |
-| `[1]+A` / `[1]+E` | start / end of line |
-| `[1]+U` / `[1]+K` / `[1]+W` | kill before / after cursor, delete word back |
-| `[1]+Backspace` | delete previous word |
-| `[1]+R` | reverse history search |
-| `[1]+↑/↓` | history search, filtered by what you have typed |
-| `[1]+←/→` | word movement |
-| `[1]+Shift+C` / `[1]+Shift+V` | copy / paste |
-| `[1]+Shift+T` / `[3]+1..9` | new tab / jump to tab N |
-
-### Windows and desktop
-
-| Keys | Action |
-|---|---|
-| `[3]+Tab` | app switcher |
-| `[3]+~` | cycle windows of the current app |
-| `[3]+F4` | close window |
-| `[2]+L` | lock screen |
-| `[1]+[3]+T` | open a terminal |
-| `[1]+[3]+←/→` | switch workspace |
-| `[1]+[3]+↑` | overview |
-
-Every F-key rule requires `Fn`, so brightness, Mission Control and dictation
-still work on a plain press.
-
 ## Limitations
 
-* No `Home`, `End`, `Insert` or `PrtSc` on Apple keyboards. `fn+←/→` gives you
-  Home/End; `[1]+Shift+3/4` takes a screenshot.
+* No `Home`, `End`, `Insert` or `PrtSc` keys on Apple keyboards, so those rows
+  above use the nearest `Fn` equivalent.
 * Moving a window to another workspace has no macOS shortcut at all. It needs a
   tool such as yabai.
 * `[1]+D` (EOF) is deliberately not mapped: it is one typo away from closing
