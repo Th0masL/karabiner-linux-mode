@@ -153,6 +153,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Reverse history search | `Ctrl+R` | `Ctrl+R` | `[1]+R` |
 | Previous / next history entry | `Ctrl+P` / `Ctrl+N` | `Ctrl+P` / `Ctrl+N` | `[1]+P` / `[1]+N` |
 | History prefix search | *(no default)* | *(no default)* | `[1]+↑/↓` |
+| Move one character left / right | `Ctrl+B` / `Ctrl+F` | `Ctrl+B` / `Ctrl+F` | `[1]+B` / `[1]+F` |
 | Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
 | Start / end of command line | `Home` / `End` | `Ctrl+A` / `Ctrl+E` | `Fn+←/→` |
 | Scroll to top / bottom | `Shift+Home` / `Shift+End` | `Cmd+Home` / `Cmd+End` | `Shift+Fn+←/→` |

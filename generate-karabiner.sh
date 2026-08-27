@@ -153,6 +153,8 @@ g   cancel current input
 t   transpose characters
 p   previous history entry
 n   next history entry
+b   move one character left
+f   move one character right
 a   start of line
 e   end of line
 u   kill before cursor
