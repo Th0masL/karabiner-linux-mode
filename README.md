@@ -143,6 +143,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Clear screen | `Ctrl+L` | `Ctrl+L` | `[1]+L` |
 | Start / end of line | `Ctrl+A` / `Ctrl+E` | `Ctrl+A` / `Ctrl+E` | `[1]+A` / `[1]+E` |
 | Kill before / after cursor | `Ctrl+U` / `Ctrl+K` | `Ctrl+U` / `Ctrl+K` | `[1]+U` / `[1]+K` |
+| Yank killed text | `Ctrl+Y` | `Ctrl+Y` | `[1]+Y` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
 | Delete word back | `Ctrl+Backspace` | `Option+Delete` (`⌫`) | `[1]+Backspace` (`[1]+⌫` on a Magic Keyboard) |
 | Delete word forward | `Ctrl+Delete` | `Meta+D` | `[1]+Fn+Backspace` (`[1]+Fn+⌫`) |
