@@ -159,6 +159,7 @@ v   insert next key literally
 h   delete previous character
 q   resume terminal output
 s   pause terminal output
+o   execute history entry and load next
 a   start of line
 e   end of line
 u   kill before cursor
