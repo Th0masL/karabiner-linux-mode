@@ -146,6 +146,7 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Yank killed text | `Ctrl+Y` | `Ctrl+Y` | `[1]+Y` |
 | Cancel current input | `Ctrl+G` | `Ctrl+G` | `[1]+G` |
 | Transpose characters | `Ctrl+T` | `Ctrl+T` | `[1]+T` |
+| Insert next key literally | `Ctrl+V` | `Ctrl+V` | `[1]+V` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
 | Delete word back | `Ctrl+Backspace` | `Option+Delete` (`⌫`) | `[1]+Backspace` (`[1]+⌫` on a Magic Keyboard) |
 | Delete word forward | `Ctrl+Delete` | `Meta+D` | `[1]+Fn+Backspace` (`[1]+Fn+⌫`) |
