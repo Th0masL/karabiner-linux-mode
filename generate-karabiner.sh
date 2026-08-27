@@ -156,6 +156,7 @@ n   next history entry
 b   move one character left
 f   move one character right
 v   insert next key literally
+h   delete previous character
 a   start of line
 e   end of line
 u   kill before cursor
