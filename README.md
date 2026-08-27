@@ -245,11 +245,17 @@ Then, by hand:
 
 ```sh
 cat zshrc-snippet.zsh >> ~/.zshrc
+
+# VS Code (after launching it at least once)
 cp vscode-keybindings.json ~/Library/Application\ Support/Code/User/keybindings.json
+
+# VSCodium (after launching it at least once)
+cp vscode-keybindings.json ~/Library/Application\ Support/VSCodium/User/keybindings.json
 ```
 
-The VS Code copy is not automatic because it would overwrite bindings you may
-already have.
+Install the editor file only for the applications you use. These copies are not
+automatic because each command overwrites any keybindings already in that
+editor's `keybindings.json`.
 
 ## Manual macOS settings
 
@@ -304,7 +310,7 @@ setup not stored in a file you control.
 | `install-karabiner-config.sh` | list profiles, verify, merge |
 | `manage-appkit-keybindings.py` | safely install/remove native editing bindings |
 | `verify-macos-setup.sh` | 24 read-only checks |
-| `vscode-keybindings.json` | reference VS Code config, and what the verifier checks against |
+| `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
 
 `karabiner.json` is generated. Edit the tables in `generate-karabiner.sh` and
