@@ -65,7 +65,7 @@ Everything after the positional remapping is exception handling:
 | Karabiner `simple_modifications` | the five positional mappings |
 | Karabiner `complex_modifications` | terminal control characters, windows and navigation |
 | macOS Keyboard Shortcuts | workspaces and Mission Control, moved to `[1]+[3]`+arrow |
-| AppKit `DefaultKeyBinding.dict` | Linux-style Home/End and forward word deletion in native editors |
+| AppKit `DefaultKeyBinding.dict` | Linux-style navigation, selection and word deletion in native editors |
 | `~/.zshrc` | 4 `bindkey` lines |
 | VS Code/VSCodium `keybindings.json` | 25 focus-aware bindings |
 

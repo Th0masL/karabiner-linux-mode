@@ -89,6 +89,17 @@ def install() -> int:
         else:
             raise ValueError(f"unrecognized ownership record: {STATE}")
 
+        # Restore keys that this project managed in an older version but no
+        # longer owns. Preserve them instead if the user changed them since the
+        # last install.
+        for key, old_installed_value in installed_before.items():
+            if key in MANAGED or bindings.get(key) != old_installed_value:
+                continue
+            if key in state["previous"]:
+                bindings[key] = state["previous"].pop(key)
+            else:
+                bindings.pop(key, None)
+
         # Record original values for keys introduced by a newer project version
         # before replacing them. Existing ownership always traces back to the
         # first installation, not merely the most recent reinstall.
