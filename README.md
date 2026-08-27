@@ -4,7 +4,7 @@ Make a Mac keyboard behave like a Linux one, by **physical key position** rather
 than by what is printed on the keycaps.
 
 `Ctrl+C` copies in Finder and interrupts in the terminal. `Ctrl+←/→` moves by
-word. `Alt+Tab` switches windows. `Ctrl+Alt+←/→` rotates workspaces.
+word. `Alt+Tab` switches applications. `Ctrl+Alt+←/→` rotates workspaces.
 
 ## Notation: [1] [2] [3] [4] [5]
 
@@ -63,10 +63,11 @@ Everything after the positional remapping is exception handling:
 | Layer | Job |
 |---|---|
 | Karabiner `simple_modifications` | the five positional mappings |
-| Karabiner `complex_modifications` | terminal control characters, windows, 27 rules |
+| Karabiner `complex_modifications` | terminal control characters, windows and navigation |
 | macOS Keyboard Shortcuts | workspaces and Mission Control, moved to `[1]+[3]`+arrow |
+| AppKit `DefaultKeyBinding.dict` | Linux-style Home/End in native text editors |
 | `~/.zshrc` | 4 `bindkey` lines |
-| VS Code `keybindings.json` | 21 bindings |
+| VS Code/VSCodium `keybindings.json` | 25 focus-aware bindings |
 
 **The remapping must live in Karabiner, not in the macOS Modifier Keys pane.**
 Set in both places it applies twice, and `[1]` ends up as Option. The Karabiner
@@ -118,11 +119,16 @@ Karabiner rules, because macOS puts these on Option rather than Control.
 |---|---|---|---|
 | Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
 | Select by word | `Ctrl+Shift+←/→` | `Option+Shift+←/→` | `[1]+Shift+←/→` |
-| Delete word left | `Ctrl+Backspace` | `Option+Backspace` | `[1]+Backspace` |
-| Delete word right | `Ctrl+Delete` | `Fn+Option+Backspace` | `[1]+Del` |
+| Delete previous word | `Ctrl+Backspace` | `Option+Delete` (`⌫`) | `[1]+Backspace` (`[1]+⌫` on a Magic Keyboard) |
+| Delete next word | `Ctrl+Delete` | `Fn+Option+Delete` (`⌦`) | `[1]+Delete` (`[1]+Fn+⌫` on a compact Magic Keyboard) |
 | Next / previous tab | `Ctrl+Tab` / `Ctrl+Shift+Tab` | `Ctrl+Tab` | `[1]+Tab` / `[1]+Shift+Tab` |
 | Line start / end | `Home` / `End` | `Cmd+←/→` | `Fn+←/→` |
-| Document start / end | `Ctrl+Home` / `Ctrl+End` | `Cmd+↑/↓` | `[1]+↑/↓` |
+| Document start / end | `Ctrl+Home` / `Ctrl+End` | `Cmd+↑/↓` | `[1]+Fn+←/→` (`[1]+↑/↓` also works) |
+
+The **Here** column uses Linux key names and behaviour, regardless of the Mac
+keycap. On a compact Magic Keyboard, the key printed `delete` (`⌫`) occupies the
+PC Backspace position, so `[1]+⌫` deletes the previous word. Hold `Fn` with it
+to produce the PC Delete key (`⌦`), so `[1]+Fn+⌫` deletes the next word.
 
 ### Terminal
 
@@ -137,10 +143,12 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 | Start / end of line | `Ctrl+A` / `Ctrl+E` | `Ctrl+A` / `Ctrl+E` | `[1]+A` / `[1]+E` |
 | Kill before / after cursor | `Ctrl+U` / `Ctrl+K` | `Ctrl+U` / `Ctrl+K` | `[1]+U` / `[1]+K` |
 | Delete word back | `Ctrl+W` | `Ctrl+W` | `[1]+W` |
-| Delete word back | `Ctrl+Backspace` | `Option+Backspace` | `[1]+Backspace` |
+| Delete word back | `Ctrl+Backspace` | `Option+Delete` (`⌫`) | `[1]+Backspace` (`[1]+⌫` on a Magic Keyboard) |
 | Reverse history search | `Ctrl+R` | `Ctrl+R` | `[1]+R` |
 | History prefix search | *(no default)* | *(no default)* | `[1]+↑/↓` |
 | Move by word | `Ctrl+←/→` | `Option+←/→` | `[1]+←/→` |
+| Start / end of command line | `Home` / `End` | `Ctrl+A` / `Ctrl+E` | `Fn+←/→` |
+| Scroll to top / bottom | `Shift+Home` / `Shift+End` | `Cmd+Home` / `Cmd+End` | `Shift+Fn+←/→` |
 | Copy | `Ctrl+Shift+C` | `Cmd+C` | `[1]+Shift+C` |
 | Paste | `Ctrl+Shift+V` | `Cmd+V` | `[1]+Shift+V` |
 | New tab | `Ctrl+Shift+T` | `Cmd+T` | `[1]+Shift+T` |
@@ -156,9 +164,9 @@ rebind by hand.
 |---|---|---|---|
 | App switcher | `Alt+Tab` | `Cmd+Tab` | `[3]+Tab` or `[4]+Tab` |
 | Cycle windows of current app | `Alt+Backtick` | `Cmd+Backtick` | `[3]+Backtick` or `[4]+Backtick` |
-| Close window | `Alt+F4` | `Cmd+W` | `[3]+F4` or `[4]+F4` |
+| Close current tab/window | `Alt+F4` | `Cmd+W` | `[3]+F4` or `[4]+F4` |
 | Lock screen | `Super+L` | `Ctrl+Cmd+Q` | `[2]+L` or `[5]+L` |
-| Open a terminal | `Ctrl+Alt+T` | *(no default)* | `[1]+[3]+T` or `[1]+[4]+T` |
+| Open configured terminal | `Ctrl+Alt+T` | *(no default)* | `[1]+[3]+T` or `[1]+[4]+T` |
 | Screenshot | `PrtSc` | `Cmd+Shift+3` | `[1]+Shift+3` |
 | Switch workspace | `Ctrl+Alt+←/→` | `Ctrl+←/→` | `[1]+[3]+←/→` or `[1]+[4]+←/→` |
 | Overview | `Super` | `Ctrl+↑` | `[1]+[3]+↑` or `[1]+[4]+↑` |
@@ -188,7 +196,37 @@ cd karabiner-linux-mode
 
 It lists your Karabiner profiles, asks which to install into (default `Linux`),
 runs the macOS checks, then merges the profile. Your other profiles are left
-alone and the previous config is backed up.
+alone and the previous config is backed up. It also safely merges Linux-style
+Home/End behavior into `~/Library/KeyBindings/DefaultKeyBinding.dict`. Restart
+open native applications such as Notes after installation.
+
+To remove only the installer-managed AppKit bindings and restore any values
+that existed before installation:
+
+```sh
+./install-karabiner-config.sh --uninstall-keybindings
+```
+
+Other custom bindings in that file are preserved. If you change one of the
+managed bindings after installation, uninstall preserves your newer value too.
+
+The terminal shortcut opens iTerm2 by default. macOS has no system-wide
+"default terminal" setting, so choose another terminal when generating the
+configuration by passing its bundle identifier:
+
+```sh
+# Apple Terminal
+TERMINAL_BUNDLE_ID=com.apple.Terminal ./generate-karabiner.sh
+
+# Ghostty
+TERMINAL_BUNDLE_ID=com.mitchellh.ghostty ./generate-karabiner.sh
+
+./install-karabiner-config.sh
+```
+
+Use Karabiner-EventViewer's *Frontmost Application* tab to find another
+terminal's bundle identifier. Pass the same variable to `--check` when using a
+non-default target.
 
 Then, by hand:
 
@@ -223,15 +261,19 @@ and history search with no visible cause.
 ./verify-macos-setup.sh
 ```
 
-20 read-only checks across macOS shortcuts, Karabiner, zsh and VS Code. Run it
+24 read-only checks across macOS shortcuts, Karabiner, AppKit, zsh, VS Code and
+VSCodium. Run it
 whenever something stops working. The usual cause is **Restore Defaults** in
 Keyboard Shortcuts, which resets every pane at once and is the only part of this
 setup not stored in a file you control.
 
 ## Limitations
 
-* No `Home`, `End`, `Insert` or `PrtSc` keys on Apple keyboards, so those rows
-  above use the nearest `Fn` equivalent.
+* No dedicated `Home`, `End`, `Insert` or `PrtSc` keys on compact Apple
+  keyboards, so those rows use the corresponding `Fn` combinations. In
+  terminal apps, `Fn+←/→` maps to
+  `Ctrl+A/E` so it works at Bash and Zsh prompts without dotfile changes. That
+  mapping is not a universal Home/End replacement inside Vim, less or tmux.
 * Moving a window to another workspace has no macOS shortcut at all. It needs a
   tool such as yabai.
 * `[1]+D` (EOF) is deliberately not mapped: it is one typo away from closing
@@ -247,7 +289,8 @@ setup not stored in a file you control.
 | `generate-karabiner.sh` | source of truth: the tables that build the rules |
 | `karabiner.json` | generated output |
 | `install-karabiner-config.sh` | list profiles, verify, merge |
-| `verify-macos-setup.sh` | 20 read-only checks |
+| `manage-appkit-keybindings.py` | safely install/remove native Home/End bindings |
+| `verify-macos-setup.sh` | 24 read-only checks |
 | `vscode-keybindings.json` | reference VS Code config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
 

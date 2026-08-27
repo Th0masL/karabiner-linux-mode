@@ -58,5 +58,11 @@
   { "key": "cmd+shift+left", "command": "cursorWordLeftSelect", "when": "editorTextFocus" },
   { "key": "cmd+shift+right", "command": "cursorWordRightSelect", "when": "editorTextFocus" },
   { "key": "cmd+backspace", "command": "deleteWordLeft", "when": "editorTextFocus && !editorReadonly" },
-  { "key": "cmd+delete", "command": "deleteWordRight", "when": "editorTextFocus && !editorReadonly" }
+  { "key": "cmd+delete", "command": "deleteWordRight", "when": "editorTextFocus && !editorReadonly" },
+
+  // ---- EDITOR: compact-keyboard Ctrl+Home/End on [1]+fn+Left/Right ----
+  { "key": "cmd+home", "command": "cursorTop", "when": "editorTextFocus" },
+  { "key": "cmd+end", "command": "cursorBottom", "when": "editorTextFocus" },
+  { "key": "cmd+shift+home", "command": "cursorTopSelect", "when": "editorTextFocus" },
+  { "key": "cmd+shift+end", "command": "cursorBottomSelect", "when": "editorTextFocus" }
 ]

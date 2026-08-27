@@ -9,6 +9,9 @@
 #   ./generate-karabiner.sh          # rewrite karabiner.json
 #   ./generate-karabiner.sh --check  # fail if karabiner.json is out of date
 #
+# Set TERMINAL_BUNDLE_ID to change what [1]+[3]/[4]+T launches:
+#   TERMINAL_BUNDLE_ID=com.apple.Terminal ./generate-karabiner.sh
+#
 # Key positions:
 #   [1] -> Command    [2] -> Control    [3] -> Option
 #   [4] -> Option     [5] -> Control
@@ -26,6 +29,14 @@ command -v jq >/dev/null 2>&1 || {
 HERE="$(cd "$(dirname "$0")" && pwd)"
 OUT="$HERE/karabiner.json"
 PROFILE_NAME="Linux"
+TERMINAL_BUNDLE_ID="${TERMINAL_BUNDLE_ID:-com.googlecode.iterm2}"
+
+# The value is embedded in a Karabiner shell_command, so accept bundle-ID
+# characters only. This also catches accidental application names or paths.
+if [[ ! "$TERMINAL_BUNDLE_ID" =~ ^[A-Za-z0-9.-]+$ ]]; then
+  echo "error: invalid TERMINAL_BUNDLE_ID: $TERMINAL_BUNDLE_ID" >&2
+  exit 1
+fi
 
 #=============================================================================#
 # SCOPES
@@ -42,15 +53,19 @@ TERMINALS='[
 # it in keybindings.json where "when" clauses can tell them apart.
 EDITORS='["^com\\.microsoft\\.VSCode", "^com\\.vscodium$"]'
 BROWSERS='[
-  "^com\\.google\\.Chrome$", "^com\\.google\\.chrome$",
+  "^com\\.google\\.Chrome$", "^com\\.google\\.Chrome\\.beta$",
+  "^com\\.google\\.chrome$",
   "^org\\.mozilla\\.firefox$", "^org\\.mozilla\\.nightly$",
   "^com\\.brave\\.Browser$", "^com\\.apple\\.Safari$"
 ]'
+SUBLIME='["^com\\.sublimetext\\.[0-9]+$"]'
 
 IF_TERM="$(jq -c -n --argjson t "$TERMINALS" \
   '[{type:"frontmost_application_if", bundle_identifiers:$t}]')"
 IF_BROWSER="$(jq -c -n --argjson b "$BROWSERS" \
   '[{type:"frontmost_application_if", bundle_identifiers:$b}]')"
+IF_DOCUMENT_APPS="$(jq -c -n --argjson b "$BROWSERS" --argjson s "$SUBLIME" \
+  '[{type:"frontmost_application_if", bundle_identifiers:($b + $s)}]')"
 UNLESS_TERM_EDITOR="$(jq -c -n --argjson t "$TERMINALS" --argjson e "$EDITORS" \
   '[{type:"frontmost_application_unless", bundle_identifiers:($t + $e)}]')"
 # Terminals only. Used where VS Code should be INCLUDED because it has no
@@ -135,6 +150,19 @@ rule "terminal: [1]+arrows for history search and word movement" \
      "$(man left_arrow  command left_arrow  left_control "$IF_TERM")" \
      "$(man right_arrow command right_arrow left_control "$IF_TERM")"
 
+# A compact Apple keyboard produces Home/End for Fn+Left/Right, but terminal
+# shells do not consistently bind those key codes. Ctrl+A/E are the portable
+# line-start/line-end commands in both Bash and Zsh and need no dotfile setup.
+rule "terminal: Fn+Left/Right moves to the start/end of the command line" \
+     "$(man left_arrow  fn a left_control "$IF_TERM")" \
+     "$(man right_arrow fn e left_control "$IF_TERM")"
+
+# GNOME Terminal uses Shift+Home/End to scroll to the top/bottom of scrollback.
+# Terminal.app and iTerm2 expose the same actions as Command+Home/End.
+rule "terminal: Shift+Fn+Left/Right scrolls to the top/bottom" \
+     "$(man left_arrow  fn+shift home left_command "$IF_TERM")" \
+     "$(man right_arrow fn+shift end  left_command "$IF_TERM")"
+
 rule "terminal: [1]+Tab / [1]+Shift+Tab cycles tabs" \
      "$(man tab command       close_bracket left_command+left_shift "$IF_TERM")" \
      "$(man tab command+shift open_bracket  left_command+left_shift "$IF_TERM")"
@@ -163,6 +191,16 @@ rule "editing: [1]+Backspace / [1]+Del delete a word" \
      "$(man delete_or_backspace command delete_or_backspace left_option "$UNLESS_TERM_EDITOR")" \
      "$(man delete_forward      command delete_forward      left_option "$UNLESS_TERM_EDITOR")"
 
+# DefaultKeyBinding.dict handles native AppKit editors. Browsers and Sublime do
+# not use AppKit text bindings, so translate compact-keyboard Ctrl+Home/End to
+# their native document-boundary shortcuts here. VS Code/VSCodium remain in
+# their focus-aware keybindings files so integrated terminals are not affected.
+rule "editing: [1]+Fn+Left/Right moves to the document start/end in browsers and Sublime" \
+     "$(man left_arrow  command+fn       up_arrow   left_command            "$IF_DOCUMENT_APPS")" \
+     "$(man right_arrow command+fn       down_arrow left_command            "$IF_DOCUMENT_APPS")" \
+     "$(man left_arrow  command+fn+shift up_arrow   left_command+left_shift "$IF_DOCUMENT_APPS")" \
+     "$(man right_arrow command+fn+shift down_arrow left_command+left_shift "$IF_DOCUMENT_APPS")"
+
 # Scoped to non-terminals only, NOT excluding VS Code: VS Code has no cmd+tab
 # binding, so excluding it would leak through to the macOS app switcher instead
 # of cycling editor tabs. Control+Tab is VS Code's own "next editor".
@@ -185,15 +223,15 @@ rule "window: [3]/[4]+Backtick cycles windows of the current application" \
      "$(man grave_accent_and_tilde option       grave_accent_and_tilde left_command            "$ANYWHERE")" \
      "$(man grave_accent_and_tilde option+shift grave_accent_and_tilde left_command+left_shift "$ANYWHERE")"
 
-rule "window: [3]/[4]+F4 closes the window" \
+rule "window: [3]/[4]+F4 closes the current tab/window" \
      "$(man f4 option w left_command "$ANYWHERE")"
 
 # macOS locks with control+command+Q.
 rule "window: [2]/[5]+L locks the screen" \
      "$(man l control q left_control+left_command "$ANYWHERE")"
 
-rule "window: [1]+[3]/[4]+T opens a terminal" \
-     "$(shell_man t command+option "open -b com.googlecode.iterm2" "$ANYWHERE")"
+rule "window: [1]+[3]/[4]+T opens the configured terminal" \
+     "$(shell_man t command+option "open -b $TERMINAL_BUNDLE_ID" "$ANYWHERE")"
 
 #=============================================================================#
 # 5. FUNCTION KEYS

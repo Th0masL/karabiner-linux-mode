@@ -71,7 +71,7 @@ CEOF
 echo
 echo "=== macOS setup check (profile: $PROFILE) ==="
 echo
-echo "[1/5] Keyboard Shortcuts"
+echo "[1/6] Keyboard Shortcuts"
 
 if ! build_helper; then
   warn "cannot read macOS keyboard shortcuts" \
@@ -140,7 +140,7 @@ if [[ -n "$DUMP" ]]; then
 fi
 
 echo
-echo "[2/5] Modifier Keys at the macOS level"
+echo "[2/6] Modifier Keys at the macOS level"
 # This layout remaps [1] through [5] in Karabiner. A macOS-level remap on
 # top of that applies TWICE -- [1] becomes Command (macOS), then Karabiner
 # rotates it again to Option -- and both configs look correct in isolation,
@@ -229,7 +229,7 @@ else
        "a partial rotation behaves unpredictably"
 fi
 echo
-echo "[3/5] Karabiner-Elements"
+echo "[3/6] Karabiner-Elements"
 CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 if [[ ! -x "$CLI" ]]; then
   bad "Karabiner-Elements is not installed" "https://karabiner-elements.pqrs.org"
@@ -279,7 +279,19 @@ else
 fi
 
 echo
-echo "[4/5] zsh key bindings"
+echo "[4/6] AppKit key bindings"
+APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
+if [[ ! -x "$APPKIT_BINDINGS" ]]; then
+  warn "AppKit key-binding manager is missing" \
+       "expected executable at $APPKIT_BINDINGS"
+elif APPKIT_STATUS="$("$APPKIT_BINDINGS" check 2>&1)"; then
+  ok "$APPKIT_STATUS"
+else
+  warn "$APPKIT_STATUS" "run ./install-karabiner-config.sh"
+fi
+
+echo
+echo "[5/6] zsh key bindings"
 BOUND="$(zsh -ic '
   bindkey "^[[1;5A"
   bindkey "^[[1;5B"
@@ -302,13 +314,12 @@ check_zsh_binding '"^[[1;5C"' "[1]+Right word movement" 'forward-word$'
 check_zsh_binding '"^[[1;5D"' "[1]+Left word movement" 'backward-word$'
 
 echo
-echo "[5/5] VS Code"
-# VS Code is the one app Karabiner cannot handle: it only sees which app is
+echo "[6/6] VS Code and VSCodium"
+# These are apps Karabiner cannot fully handle: it only sees which app is
 # frontmost, not whether focus is in the editor or the integrated terminal, and
 # those need opposite behaviour for the same keys. So VS Code carries its own
 # bindings, scoped with "when" clauses. vscode-keybindings.json in this repo is
 # the reference copy.
-VSC="$HOME/Library/Application Support/Code/User/keybindings.json"
 REF="$HERE/vscode-keybindings.json"
 # Strip JSONC comments and trailing commas while preserving comment-like text
 # inside strings. Perl ships with the macOS versions supported by this project.
@@ -319,14 +330,19 @@ strip_jsonc() {
   ' "$1"
 }
 
-if [[ ! -f "$VSC" ]]; then
-  warn "no VS Code keybindings.json" \
-       "copy $REF to \"$VSC\" (skip if you do not use VS Code)"
-elif ! strip_jsonc "$VSC" | jq empty 2>/dev/null; then
-  bad "keybindings.json does not parse" "VS Code silently ignores the whole file"
-else
-  n="$(strip_jsonc "$VSC" | jq 'length')"
-  ok "keybindings.json is valid ($n bindings)"
+check_code_bindings() {
+  local label="$1" config="$2" n MISSING leak
+  if [[ ! -f "$config" ]]; then
+    warn "no $label keybindings.json" \
+         "copy $REF to \"$config\" (skip if you do not use $label)"
+    return
+  elif ! strip_jsonc "$config" | jq empty 2>/dev/null; then
+    bad "$label keybindings.json does not parse" "$label silently ignores the whole file"
+    return
+  fi
+
+  n="$(strip_jsonc "$config" | jq 'length')"
+  ok "$label keybindings.json is valid ($n bindings)"
 
   # Expectations are DERIVED from vscode-keybindings.json rather than duplicated
   # here, so adding a binding to the reference automatically extends this check.
@@ -335,29 +351,34 @@ else
   else
     MISSING="$(jq -rn \
       --argjson ref "$(strip_jsonc "$REF" | jq '[.[] | {key, command, args, when}]')" \
-      --argjson liv "$(strip_jsonc "$VSC" | jq '[.[] | {key, command, args, when}]')" \
+      --argjson liv "$(strip_jsonc "$config" | jq '[.[] | {key, command, args, when}]')" \
       '($ref - $liv)[] | "\(.key) -> \(.command) (including args and when clause)"')"
     if [[ -z "$MISSING" ]]; then
-      ok "all bindings from the reference config are present"
+      ok "$label has all bindings from the reference config"
     else
       while IFS= read -r line; do
         [[ -n "$line" ]] && printf '        missing: %s\n' "$line"
       done <<< "$MISSING"
-      bad "some reference bindings are missing (listed above)" \
-          "copy $REF over \"$VSC\""
+      bad "$label is missing some reference bindings (listed above)" \
+          "copy $REF over \"$config\""
     fi
   fi
 
   # A binding with no "when" applies in the terminal too, which would break
   # SIGINT and friends.
-  leak="$(strip_jsonc "$VSC" | jq -r '[.[] | select(has("when") | not) | .key] | join(", ")')"
+  leak="$(strip_jsonc "$config" | jq -r '[.[] | select(has("when") | not) | .key] | join(", ")')"
   if [[ -z "$leak" ]]; then
-    ok "every binding is scoped (none leak into the terminal)"
+    ok "$label bindings are scoped (none leak into the terminal)"
   else
-    bad "unscoped VS Code bindings: $leak" \
+    bad "unscoped $label bindings: $leak" \
         'add a "when" clause, e.g. "editorTextFocus", or they will also fire in the terminal'
   fi
-fi
+}
+
+check_code_bindings "VS Code" \
+  "$HOME/Library/Application Support/Code/User/keybindings.json"
+check_code_bindings "VSCodium" \
+  "$HOME/Library/Application Support/VSCodium/User/keybindings.json"
 
 echo
 printf '=== %d passed, %d warnings, %d failures ===\n' "$PASS" "$WARN" "$FAIL"

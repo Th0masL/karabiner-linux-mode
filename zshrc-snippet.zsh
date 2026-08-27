@@ -47,8 +47,8 @@ bindkey "^[[1;5C" forward-word
 # ---------------------------------------------------------------------------
 # OPTIONAL: guard against closing the terminal by accident
 #
-# [1]+D sends EOF, which ends the shell and closes the window. If you hit it by
-# mistake, this makes zsh ask instead. It still deletes a character mid-line.
+# [2]/[5]+D sends EOF, which ends the shell and closes the window. If you hit
+# it by mistake, this makes zsh ask instead. It still deletes mid-line.
 # ---------------------------------------------------------------------------
 # setopt IGNORE_EOF
 

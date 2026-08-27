@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # install-karabiner-config.sh [profile-name]
+# install-karabiner-config.sh --uninstall-keybindings
 #
 # Installs this repo's Linux-style keyboard layout into Karabiner-Elements.
 #
@@ -8,6 +9,7 @@
 #   2. checks the macOS-side settings the layout depends on, reporting anything
 #      you must change by hand (verify-macos-setup.sh)
 #   3. merges the profile into your existing Karabiner config
+#   4. installs Linux-style Home/End bindings for native macOS text editors
 #
 # The profile is MERGED, not overwritten: any other profiles you already have
 # are left untouched. Only a profile with the chosen name is replaced.
@@ -23,9 +25,14 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO_CFG="$HERE/karabiner.json"
 VERIFY="$HERE/verify-macos-setup.sh"
+APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
 LIVE_CFG="$HOME/.config/karabiner/karabiner.json"
 CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 DEFAULT_PROFILE="Linux"
+
+if [[ "${1:-}" == "--uninstall-keybindings" ]]; then
+  exec "$APPKIT_BINDINGS" uninstall
+fi
 
 #-----------------------------------------------------------------------------#
 # prerequisites
@@ -44,6 +51,7 @@ EOM
 fi
 
 [[ -f "$REPO_CFG" ]] || { echo "error: $REPO_CFG not found" >&2; exit 1; }
+[[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
 jq empty "$REPO_CFG" 2>/dev/null || { echo "error: $REPO_CFG is not valid JSON" >&2; exit 1; }
 
 if [[ ! -x "$CLI" ]]; then
@@ -176,4 +184,6 @@ sleep 2
 "$CLI" --select-profile "$PROFILE"
 echo "Active profile: $("$CLI" --show-current-profile-name)"
 echo
-echo "Done. Karabiner watches its config file, so no restart is needed."
+"$APPKIT_BINDINGS" install
+echo
+echo "Done. Karabiner needs no restart; restart native apps for Home/End changes."
