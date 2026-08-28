@@ -18,21 +18,14 @@
 #
 set -uo pipefail
 
-if ! command -v jq >/dev/null 2>&1; then
-  cat >&2 <<'EOM'
-error: jq is required but not installed.
-
-Install it with Homebrew:
-
-    brew install jq
-
-If you do not have Homebrew, see https://brew.sh
-EOM
+command -v python3 >/dev/null 2>&1 || {
+  echo "error: Python 3 is required but not installed" >&2
   exit 1
-fi
+}
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LIVE="$HOME/.config/karabiner/karabiner.json"
+PROFILE_MANAGER="$HERE/manage-karabiner-profile"
 PROFILE="${1:-Linux}"
 PASS=0; FAIL=0; WARN=0
 ok()   { printf '  \033[32mPASS\033[0m  %s\n' "$1"; PASS=$((PASS+1)); }
@@ -155,9 +148,9 @@ echo "[2/6] Modifier Keys at the macOS level"
 # assuming the mapping appears in a plist filename.
 
 KARABINER_ROT=0
-if [[ -f "$LIVE" ]] && jq empty "$LIVE" 2>/dev/null; then
-  KARABINER_ROT="$(jq -r --arg n "$PROFILE" \
-    '[(.profiles // [])[] | select(.name == $n) | (.simple_modifications // []) | length][0] // 0' "$LIVE")"
+if [[ -f "$LIVE" ]] && [[ -x "$PROFILE_MANAGER" ]]; then
+  KARABINER_ROT="$("$PROFILE_MANAGER" rotation "$PROFILE" 2>/dev/null)"
+  KARABINER_ROT="${KARABINER_ROT:-0}"
 fi
 
 MACOS_REMAP=0
@@ -247,38 +240,17 @@ else
     warn "active profile is '$cur'" "expected '$PROFILE'"
   fi
 fi
-if [[ -f "$LIVE" ]] && jq empty "$LIVE" 2>/dev/null; then
-  actual="$(jq -S -c --arg name "$PROFILE" '
-    [(.profiles // [])[] | select(.name == $name)][0] // null
-    | if . == null then null else
-        del(.selected)
-        | .simple_modifications = ((.simple_modifications // []) | sort_by(.from.key_code))
-      end' "$LIVE")"
-  expected="$(jq -S -c --arg name "$PROFILE" '
-    [(.profiles // [])[] | select(.name != "Default")][0] // null
-    | if . == null then null else
-        .name = $name
-        | del(.selected)
-        | .simple_modifications = ((.simple_modifications // []) | sort_by(.from.key_code))
-      end' "$HERE/karabiner.json")"
-  if [[ "$actual" == "null" ]]; then
-    bad "profile '$PROFILE' is not in the live config" "run ./install-karabiner-config.sh"
-  elif [[ "$expected" == "null" ]]; then
-    bad "reference layout profile is missing from $HERE/karabiner.json" \
-        "regenerate karabiner.json before verifying"
-  elif [[ "$actual" == "$expected" ]]; then
-    rot="$(jq '(.simple_modifications // []) | length' <<< "$actual")"
-    nrules="$(jq '(.complex_modifications.rules // []) | length' <<< "$actual")"
+if [[ -f "$LIVE" ]] && [[ -x "$PROFILE_MANAGER" ]]; then
+  if REPOSITORY_STATUS="$("$PROFILE_MANAGER" repository-check "$PROFILE" 2>&1)"; then
+    IFS=$'\t' read -r rot nrules <<< "$REPOSITORY_STATUS"
     ok "profile '$PROFILE' exactly matches the repository ($rot modifier mappings, $nrules rules)"
   else
-    bad "profile '$PROFILE' differs from the repository layout" \
-        "run ./install-karabiner-config.sh to replace the drifted profile"
+    bad "$REPOSITORY_STATUS" "run ./install-karabiner-config.sh to replace the drifted profile"
   fi
 else
-  warn "could not read the live Karabiner config" "is $LIVE valid JSON?"
+  warn "could not inspect the live Karabiner config" "is $LIVE valid JSON and is $PROFILE_MANAGER executable?"
 fi
 
-PROFILE_MANAGER="$HERE/manage-karabiner-profile.py"
 if [[ ! -x "$PROFILE_MANAGER" ]]; then
   warn "Karabiner profile ownership manager is missing" \
        "expected executable at $PROFILE_MANAGER"
@@ -290,7 +262,7 @@ fi
 
 echo
 echo "[4/6] AppKit key bindings"
-APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
+APPKIT_BINDINGS="$HERE/manage-appkit-keybindings"
 if [[ ! -x "$APPKIT_BINDINGS" ]]; then
   warn "AppKit key-binding manager is missing" \
        "expected executable at $APPKIT_BINDINGS"
@@ -331,53 +303,41 @@ echo "[6/6] VS Code and VSCodium"
 # bindings, scoped with "when" clauses. vscode-keybindings.json in this repo is
 # the reference copy.
 REF="$HERE/vscode-keybindings.json"
-EDITOR_MANAGER="$HERE/manage-editor-keybindings.py"
-# Strip JSONC comments and trailing commas while preserving comment-like text
-# inside strings. Perl ships with the macOS versions supported by this project.
-strip_jsonc() {
-  perl -0777 -pe '
-    s~("(?:\\.|[^"\\])*")|//[^\r\n]*|/\*.*?\*/~$1 // ""~gse;
-    s~("(?:\\.|[^"\\])*")|,(\s*[}\]])~$1 // $2~gse;
-  ' "$1"
-}
+EDITOR_MANAGER="$HERE/manage-editor-keybindings"
 
 check_code_bindings() {
-  local label="$1" config="$2" n MISSING leak
+  local label="$1" config="$2" audit_output n MISSING leak
   if [[ ! -f "$config" ]]; then
     warn "no $label keybindings.json" \
          "copy $REF to \"$config\" (skip if you do not use $label)"
     return
-  elif ! strip_jsonc "$config" | jq empty 2>/dev/null; then
-    bad "$label keybindings.json does not parse" "$label silently ignores the whole file"
+  elif [[ ! -x "$EDITOR_MANAGER" ]]; then
+    warn "editor key-binding manager is missing" "expected executable at $EDITOR_MANAGER"
+    return
+  elif ! audit_output="$("$EDITOR_MANAGER" audit "$config" 2>&1)"; then
+    bad "$label keybindings.json does not parse" "$audit_output"
     return
   fi
 
-  n="$(strip_jsonc "$config" | jq 'length')"
+  n="$(awk -F'\t' '$1 == "COUNT" {print $2}' <<< "$audit_output")"
   ok "$label keybindings.json is valid ($n bindings)"
 
   # Expectations are DERIVED from vscode-keybindings.json rather than duplicated
   # here, so adding a binding to the reference automatically extends this check.
-  if [[ ! -f "$REF" ]]; then
-    warn "no reference file at $REF" "cannot check which bindings are expected"
+  MISSING="$(awk -F'\t' '$1 == "MISSING" {print $2}' <<< "$audit_output")"
+  if [[ -z "$MISSING" ]]; then
+    ok "$label has all bindings from the reference config"
   else
-    MISSING="$(jq -rn \
-      --argjson ref "$(strip_jsonc "$REF" | jq '[.[] | {key, command, args, when}]')" \
-      --argjson liv "$(strip_jsonc "$config" | jq '[.[] | {key, command, args, when}]')" \
-      '($ref - $liv)[] | "\(.key) -> \(.command) (including args and when clause)"')"
-    if [[ -z "$MISSING" ]]; then
-      ok "$label has all bindings from the reference config"
-    else
-      while IFS= read -r line; do
-        [[ -n "$line" ]] && printf '        missing: %s\n' "$line"
-      done <<< "$MISSING"
-      bad "$label is missing some reference bindings (listed above)" \
-          "copy $REF over \"$config\""
-    fi
+    while IFS= read -r line; do
+      [[ -n "$line" ]] && printf '        missing: %s\n' "$line"
+    done <<< "$MISSING"
+    bad "$label is missing some reference bindings (listed above)" \
+        "copy $REF over \"$config\""
   fi
 
   # A binding with no "when" applies in the terminal too, which would break
   # SIGINT and friends.
-  leak="$(strip_jsonc "$config" | jq -r '[.[] | select(has("when") | not) | .key] | join(", ")')"
+  leak="$(awk -F'\t' '$1 == "LEAK" {printf "%s%s", separator, $2; separator=", "}' <<< "$audit_output")"
   if [[ -z "$leak" ]]; then
     ok "$label bindings are scoped (none leak into the terminal)"
   else

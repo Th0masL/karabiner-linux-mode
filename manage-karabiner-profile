@@ -217,20 +217,77 @@ def check(requested_name: Optional[str] = None) -> int:
     return 0
 
 
+def list_profiles() -> int:
+    if not LIVE.exists():
+        return 0
+    for profile in profiles(read_json(LIVE)):
+        rules = profile.get("complex_modifications", {}).get("rules", [])
+        print(f'{profile.get("name", "")}\t{len(rules)}\t{"*" if profile.get("selected") else ""}')
+    return 0
+
+
+def active_profile() -> int:
+    if not LIVE.exists():
+        return 0
+    selected = next((p for p in profiles(read_json(LIVE)) if p.get("selected")), None)
+    if selected:
+        print(selected.get("name", ""))
+    return 0
+
+
+def rotation_count(name: str) -> int:
+    if not LIVE.exists():
+        print(0)
+        return 0
+    current = find_profile(read_json(LIVE), name)
+    print(len(current.get("simple_modifications", [])) if current else 0)
+    return 0
+
+
+def repository_check(name: str) -> int:
+    if not LIVE.exists():
+        print("live Karabiner config is missing")
+        return 1
+    current = find_profile(read_json(LIVE), name)
+    if current is None:
+        print(f"profile {name!r} is not in the live config")
+        return 1
+    expected = reference_profile(name)
+    if comparable(current) != comparable(expected):
+        print(f"profile {name!r} differs from the repository layout")
+        return 1
+    print(
+        f'{len(current.get("simple_modifications", []))}\t'
+        f'{len(current.get("complex_modifications", {}).get("rules", []))}'
+    )
+    return 0
+
+
 def main() -> int:
-    if len(sys.argv) not in {2, 3} or sys.argv[1] not in {"install", "uninstall", "check"}:
+    commands = {"install", "uninstall", "check", "list", "active", "rotation", "repository-check"}
+    if len(sys.argv) not in {2, 3} or sys.argv[1] not in commands:
         print(
-            f"usage: {Path(sys.argv[0]).name} install PROFILE | uninstall [PROFILE] | check [PROFILE]",
+            f"usage: {Path(sys.argv[0]).name} install PROFILE | uninstall [PROFILE] | "
+            "check [PROFILE] | list | active | rotation PROFILE | repository-check PROFILE",
             file=sys.stderr,
         )
         return 2
     try:
-        if sys.argv[1] == "install":
+        command = sys.argv[1]
+        if command == "install":
             if len(sys.argv) != 3:
                 raise ValueError("install requires a profile name")
             return install(sys.argv[2])
+        if command in {"list", "active"}:
+            if len(sys.argv) != 2:
+                raise ValueError(f"{command} does not accept a profile name")
+            return list_profiles() if command == "list" else active_profile()
+        if command in {"rotation", "repository-check"}:
+            if len(sys.argv) != 3:
+                raise ValueError(f"{command} requires a profile name")
+            return rotation_count(sys.argv[2]) if command == "rotation" else repository_check(sys.argv[2])
         requested = sys.argv[2] if len(sys.argv) == 3 else None
-        return uninstall(requested) if sys.argv[1] == "uninstall" else check(requested)
+        return uninstall(requested) if command == "uninstall" else check(requested)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

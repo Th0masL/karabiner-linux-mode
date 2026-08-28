@@ -8,11 +8,15 @@ import importlib.util
 import io
 import tempfile
 import unittest
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).with_name("manage-editor-keybindings.py")
-SPEC = importlib.util.spec_from_file_location("manage_editor_keybindings", SCRIPT)
+SCRIPT = Path(__file__).with_name("manage-editor-keybindings")
+SPEC = importlib.util.spec_from_loader(
+    "manage_editor_keybindings",
+    SourceFileLoader("manage_editor_keybindings", str(SCRIPT)),
+)
 assert SPEC and SPEC.loader
 manager = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(manager)
@@ -141,6 +145,24 @@ class EditorKeybindingManagerTests(unittest.TestCase):
 """
         parsed = manager.parse_bindings(text, "memory")
         self.assertEqual(parsed[0]["args"]["text"], "https://x/*y*/")
+
+    def test_audit_reports_count_missing_bindings_and_unscoped_leaks(self) -> None:
+        self.write_reference(
+            [self.binding("cmd+c", "\u0003"), self.binding("cmd+d", "\u0004")]
+        )
+        self.code.parent.mkdir(parents=True)
+        self.code.write_text(
+            '[{"key":"cmd+c","command":"workbench.action.terminal.sendSequence",'
+            '"args":{"text":"\\u0003"},"when":"terminalFocus"},'
+            '{"key":"cmd+x","command":"example"}]\n',
+            encoding="utf-8",
+        )
+
+        self.assertEqual(manager.audit(self.code), 0)
+        output = self.output.getvalue()
+        self.assertIn("COUNT\t2", output)
+        self.assertIn("MISSING\tcmd+d", output)
+        self.assertIn("LEAK\tcmd+x", output)
 
 
 if __name__ == "__main__":

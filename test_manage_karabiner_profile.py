@@ -8,11 +8,15 @@ import importlib.util
 import io
 import tempfile
 import unittest
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).with_name("manage-karabiner-profile.py")
-SPEC = importlib.util.spec_from_file_location("manage_karabiner_profile", SCRIPT)
+SCRIPT = Path(__file__).with_name("manage-karabiner-profile")
+SPEC = importlib.util.spec_from_loader(
+    "manage_karabiner_profile",
+    SourceFileLoader("manage_karabiner_profile", str(SCRIPT)),
+)
 assert SPEC and SPEC.loader
 manager = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(manager)

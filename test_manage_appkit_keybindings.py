@@ -9,11 +9,15 @@ import io
 import os
 import tempfile
 import unittest
+from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).with_name("manage-appkit-keybindings.py")
-SPEC = importlib.util.spec_from_file_location("manage_appkit_keybindings", SCRIPT)
+SCRIPT = Path(__file__).with_name("manage-appkit-keybindings")
+SPEC = importlib.util.spec_from_loader(
+    "manage_appkit_keybindings",
+    SourceFileLoader("manage_appkit_keybindings", str(SCRIPT)),
+)
 assert SPEC and SPEC.loader
 manager = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(manager)

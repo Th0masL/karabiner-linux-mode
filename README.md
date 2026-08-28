@@ -200,8 +200,9 @@ still work on a plain press.
 
 ## Install
 
-Requires [Karabiner-Elements](https://karabiner-elements.pqrs.org), `jq`, and
-Xcode Command Line Tools.
+Requires [Karabiner-Elements](https://karabiner-elements.pqrs.org) and Python 3,
+which is provided by Xcode Command Line Tools on macOS. No Homebrew packages or
+third-party Python modules are required.
 
 ```sh
 git clone https://github.com/Th0masL/karabiner-linux-mode.git
@@ -267,10 +268,10 @@ configuration by passing its bundle identifier:
 
 ```sh
 # Apple Terminal
-TERMINAL_BUNDLE_ID=com.apple.Terminal ./generate-karabiner.sh
+TERMINAL_BUNDLE_ID=com.apple.Terminal ./generate-karabiner
 
 # Ghostty
-TERMINAL_BUNDLE_ID=com.mitchellh.ghostty ./generate-karabiner.sh
+TERMINAL_BUNDLE_ID=com.mitchellh.ghostty ./generate-karabiner
 
 ./install-karabiner-config.sh
 ```
@@ -334,12 +335,14 @@ setup not stored in a file you control.
 
 | File | Purpose |
 |---|---|
-| `generate-karabiner.sh` | source of truth: the tables that build the rules |
+| `generate-karabiner` | dependency-free Python source of truth that builds the rules |
+| `generate-karabiner.sh` | compatibility wrapper for the former command |
 | `karabiner.json` | generated output |
 | `install-karabiner-config.sh` | list profiles, verify, and merge all managed configuration |
-| `manage-karabiner-profile.py` | safely install/remove and restore the owned Karabiner profile |
-| `manage-appkit-keybindings.py` | safely install/remove native editing bindings |
-| `manage-editor-keybindings.py` | safely install/remove VS Code/VSCodium bindings |
+| `manage-karabiner-profile` | safely install/remove and restore the owned Karabiner profile |
+| `manage-appkit-keybindings` | safely install/remove native editing bindings |
+| `manage-editor-keybindings` | safely install/remove VS Code/VSCodium bindings |
+| `test_generate_karabiner.py` | semantic-equivalence tests for generated configuration |
 | `test_manage_karabiner_profile.py` | regression tests for reversible profile changes |
 | `test_manage_appkit_keybindings.py` | regression tests for reversible AppKit changes |
 | `test_manage_editor_keybindings.py` | regression tests for reversible editor changes |
@@ -347,12 +350,12 @@ setup not stored in a file you control.
 | `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
 
-`karabiner.json` is generated. Edit the tables in `generate-karabiner.sh` and
+`karabiner.json` is generated. Edit the tables in `generate-karabiner` and
 re-run it rather than hand-editing 1600 lines of nested JSON:
 
 ```sh
-./generate-karabiner.sh          # rewrite karabiner.json
-./generate-karabiner.sh --check  # fail if karabiner.json is stale
+./generate-karabiner          # rewrite karabiner.json
+./generate-karabiner --check  # fail if karabiner.json is stale
 ./install-karabiner-config.sh    # apply it
 ```
 

@@ -21,17 +21,17 @@
 # saves it atomically (write temp file, then rename), which replaces a symlink
 # with a regular file. Re-run this script after editing the repo copy.
 #
-# Requires: jq, and Karabiner-Elements.
+# Requires: Python 3 and Karabiner-Elements.
 #
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO_CFG="$HERE/karabiner.json"
-GENERATOR="$HERE/generate-karabiner.sh"
+GENERATOR="$HERE/generate-karabiner"
 VERIFY="$HERE/verify-macos-setup.sh"
-PROFILE_MANAGER="$HERE/manage-karabiner-profile.py"
-APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
-EDITOR_BINDINGS="$HERE/manage-editor-keybindings.py"
+PROFILE_MANAGER="$HERE/manage-karabiner-profile"
+APPKIT_BINDINGS="$HERE/manage-appkit-keybindings"
+EDITOR_BINDINGS="$HERE/manage-editor-keybindings"
 LIVE_CFG="$HOME/.config/karabiner/karabiner.json"
 CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 DEFAULT_PROFILE="Linux"
@@ -50,8 +50,6 @@ if [[ "${1:-}" == "--uninstall" ]]; then
   [[ -x "$PROFILE_MANAGER" ]] || { echo "error: $PROFILE_MANAGER not found or not executable" >&2; exit 1; }
   [[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
   [[ -x "$EDITOR_BINDINGS" ]] || { echo "error: $EDITOR_BINDINGS not found or not executable" >&2; exit 1; }
-  command -v jq >/dev/null 2>&1 || { echo "error: jq is required but not installed" >&2; exit 1; }
-
   if [[ -n "${2:-}" ]]; then
     "$PROFILE_MANAGER" uninstall "$2"
   else
@@ -59,7 +57,7 @@ if [[ "${1:-}" == "--uninstall" ]]; then
   fi
 
   if [[ -f "$LIVE_CFG" ]] && [[ -x "$CLI" ]]; then
-    ACTIVE_PROFILE="$(jq -r '[.profiles[] | select(.selected == true)][0].name // empty' "$LIVE_CFG")"
+    ACTIVE_PROFILE="$("$PROFILE_MANAGER" active)"
     if [[ -n "$ACTIVE_PROFILE" ]]; then
       if "$CLI" --select-profile "$ACTIVE_PROFILE"; then
         echo "Active profile: $ACTIVE_PROFILE"
@@ -87,18 +85,10 @@ fi
 #-----------------------------------------------------------------------------#
 # prerequisites
 #-----------------------------------------------------------------------------#
-if ! command -v jq >/dev/null 2>&1; then
-  cat >&2 <<'EOM'
-error: jq is required but not installed.
-
-Install it with Homebrew:
-
-    brew install jq
-
-If you do not have Homebrew, see https://brew.sh
-EOM
+command -v python3 >/dev/null 2>&1 || {
+  echo "error: Python 3 is required but not installed" >&2
   exit 1
-fi
+}
 
 [[ -f "$REPO_CFG" ]] || { echo "error: $REPO_CFG not found" >&2; exit 1; }
 [[ -x "$GENERATOR" ]] || { echo "error: $GENERATOR not found or not executable" >&2; exit 1; }
@@ -106,7 +96,6 @@ fi
 [[ -x "$PROFILE_MANAGER" ]] || { echo "error: $PROFILE_MANAGER not found or not executable" >&2; exit 1; }
 [[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
 [[ -x "$EDITOR_BINDINGS" ]] || { echo "error: $EDITOR_BINDINGS not found or not executable" >&2; exit 1; }
-jq empty "$REPO_CFG" 2>/dev/null || { echo "error: $REPO_CFG is not valid JSON" >&2; exit 1; }
 "$GENERATOR" --check
 
 if [[ ! -x "$CLI" ]]; then
@@ -118,13 +107,8 @@ fi
 #-----------------------------------------------------------------------------#
 # 2. list profiles and choose one
 #-----------------------------------------------------------------------------#
-if [[ -f "$LIVE_CFG" ]] && jq empty "$LIVE_CFG" 2>/dev/null; then
-  LIST="$(jq -r '
-    (.profiles // [])[]
-    | [ .name,
-        ((.complex_modifications.rules // []) | length | tostring),
-        (if .selected then "*" else "" end) ]
-    | @tsv' "$LIVE_CFG")"
+if [[ -f "$LIVE_CFG" ]]; then
+  LIST="$("$PROFILE_MANAGER" list)"
 else
   LIST=""
 fi
