@@ -309,6 +309,18 @@ and history search with no visible cause.
 
 ## Checking it
 
+Run the dependency-free repository checks after changing code or mappings:
+
+```sh
+./test
+```
+
+This runs Python syntax checks, all unit tests, generated-configuration
+freshness, shell syntax checks, and ShellCheck when it is installed. The same
+command runs automatically in GitHub Actions on pushes and pull requests.
+
+To inspect the currently installed macOS configuration:
+
 ```sh
 ./verify-macos-setup.sh
 ```
@@ -346,6 +358,7 @@ setup not stored in a file you control.
 | `test_manage_karabiner_profile.py` | regression tests for reversible profile changes |
 | `test_manage_appkit_keybindings.py` | regression tests for reversible AppKit changes |
 | `test_manage_editor_keybindings.py` | regression tests for reversible editor changes |
+| `test` | dependency-free repository test runner used locally and in CI |
 | `verify-macos-setup.sh` | 26 read-only checks |
 | `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |

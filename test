@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""Run the repository's dependency-free regression checks."""
+
+from __future__ import annotations
+
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+
+HERE = Path(__file__).resolve().parent
+PYTHON_TOOLS = [
+    "generate-karabiner",
+    "manage-karabiner-profile",
+    "manage-appkit-keybindings",
+    "manage-editor-keybindings",
+]
+BASH_SCRIPTS = ["install-karabiner-config.sh", "verify-macos-setup.sh"]
+SH_SCRIPTS = ["generate-karabiner.sh"]
+
+
+def run(label: str, command: list[str]) -> None:
+    print(f"\n=== {label} ===", flush=True)
+    subprocess.run(command, cwd=HERE, check=True)
+
+
+def check_python_syntax() -> None:
+    print("\n=== Python syntax ===", flush=True)
+    paths = [HERE / name for name in PYTHON_TOOLS]
+    paths.extend(sorted(HERE.glob("test_*.py")))
+    for path in paths:
+        compile(path.read_text(encoding="utf-8"), str(path), "exec")
+        print(f"ok  {path.name}")
+
+
+def main() -> int:
+    try:
+        check_python_syntax()
+        run("Unit tests", [sys.executable, "-m", "unittest", "discover", "-v"])
+        run("Generated configuration", [str(HERE / "generate-karabiner"), "--check"])
+        run("Bash syntax", ["bash", "-n", *BASH_SCRIPTS])
+        run("POSIX shell syntax", ["sh", "-n", *SH_SCRIPTS])
+        shellcheck = shutil.which("shellcheck")
+        if shellcheck:
+            run("ShellCheck", [shellcheck, *BASH_SCRIPTS, *SH_SCRIPTS])
+        else:
+            print("\n=== ShellCheck ===\nskipped (not installed)")
+    except (OSError, subprocess.CalledProcessError, SyntaxError) as error:
+        print(f"\nFAILED: {error}", file=sys.stderr)
+        return 1
+    print("\nAll repository checks passed.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
