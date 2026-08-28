@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
 # install-karabiner-config.sh [profile-name]
+# install-karabiner-config.sh --uninstall [profile-name]
 # install-karabiner-config.sh --uninstall-keybindings
 # install-karabiner-config.sh --uninstall-editor-keybindings
 #
@@ -28,6 +29,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO_CFG="$HERE/karabiner.json"
 GENERATOR="$HERE/generate-karabiner.sh"
 VERIFY="$HERE/verify-macos-setup.sh"
+PROFILE_MANAGER="$HERE/manage-karabiner-profile.py"
 APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
 EDITOR_BINDINGS="$HERE/manage-editor-keybindings.py"
 LIVE_CFG="$HOME/.config/karabiner/karabiner.json"
@@ -39,6 +41,47 @@ if [[ "${1:-}" == "--uninstall-keybindings" ]]; then
 fi
 if [[ "${1:-}" == "--uninstall-editor-keybindings" ]]; then
   exec "$EDITOR_BINDINGS" uninstall
+fi
+if [[ "${1:-}" == "--uninstall" ]]; then
+  if (( $# > 2 )); then
+    echo "usage: $0 --uninstall [profile-name]" >&2
+    exit 2
+  fi
+  [[ -x "$PROFILE_MANAGER" ]] || { echo "error: $PROFILE_MANAGER not found or not executable" >&2; exit 1; }
+  [[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
+  [[ -x "$EDITOR_BINDINGS" ]] || { echo "error: $EDITOR_BINDINGS not found or not executable" >&2; exit 1; }
+  command -v jq >/dev/null 2>&1 || { echo "error: jq is required but not installed" >&2; exit 1; }
+
+  if [[ -n "${2:-}" ]]; then
+    "$PROFILE_MANAGER" uninstall "$2"
+  else
+    "$PROFILE_MANAGER" uninstall
+  fi
+
+  if [[ -f "$LIVE_CFG" ]] && [[ -x "$CLI" ]]; then
+    ACTIVE_PROFILE="$(jq -r '[.profiles[] | select(.selected == true)][0].name // empty' "$LIVE_CFG")"
+    if [[ -n "$ACTIVE_PROFILE" ]]; then
+      if "$CLI" --select-profile "$ACTIVE_PROFILE"; then
+        echo "Active profile: $ACTIVE_PROFILE"
+      else
+        echo "warning: profile was removed, but Karabiner could not activate $ACTIVE_PROFILE" >&2
+      fi
+    fi
+  fi
+
+  UNINSTALL_RC=0
+  "$APPKIT_BINDINGS" uninstall || UNINSTALL_RC=$?
+  "$EDITOR_BINDINGS" uninstall || UNINSTALL_RC=$?
+
+  cat <<'EOM'
+
+Manual cleanup reminders:
+  - If you added the four bindkey lines from zshrc-snippet.zsh to ~/.zshrc or
+    ~/.bashrc, delete those lines manually.
+  - Restore any macOS Keyboard Shortcuts you changed manually if you want the
+    original macOS shortcuts back.
+EOM
+  exit "$UNINSTALL_RC"
 fi
 
 #-----------------------------------------------------------------------------#
@@ -60,6 +103,7 @@ fi
 [[ -f "$REPO_CFG" ]] || { echo "error: $REPO_CFG not found" >&2; exit 1; }
 [[ -x "$GENERATOR" ]] || { echo "error: $GENERATOR not found or not executable" >&2; exit 1; }
 [[ -x "$VERIFY" ]] || { echo "error: $VERIFY not found or not executable" >&2; exit 1; }
+[[ -x "$PROFILE_MANAGER" ]] || { echo "error: $PROFILE_MANAGER not found or not executable" >&2; exit 1; }
 [[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
 [[ -x "$EDITOR_BINDINGS" ]] || { echo "error: $EDITOR_BINDINGS not found or not executable" >&2; exit 1; }
 jq empty "$REPO_CFG" 2>/dev/null || { echo "error: $REPO_CFG is not valid JSON" >&2; exit 1; }
@@ -126,49 +170,7 @@ echo
 #-----------------------------------------------------------------------------#
 # 3. merge the profile into the live config
 #-----------------------------------------------------------------------------#
-if [[ -f "$LIVE_CFG" ]]; then
-  BACKUP="$LIVE_CFG.backup.$(date +%Y%m%d-%H%M%S)"
-  cp "$LIVE_CFG" "$BACKUP"
-  echo "Backed up existing config -> $BACKUP"
-fi
-mkdir -p "$(dirname "$LIVE_CFG")"
-
-# The repo ships a "Default" pass-through profile plus the layout profile; the
-# payload is whichever is not the pass-through one.
-PAYLOAD="$(jq --arg name "$PROFILE" '
-  (.profiles | map(select(.name != "Default")) | .[0])
-  | .name = $name
-  | .selected = true' "$REPO_CFG")"
-
-if [[ -z "$PAYLOAD" || "$PAYLOAD" == "null" ]]; then
-  echo "error: no layout profile found in $REPO_CFG" >&2
-  exit 1
-fi
-
-BASE="{}"
-if [[ -f "$LIVE_CFG" ]] && jq empty "$LIVE_CFG" 2>/dev/null; then
-  BASE="$(cat "$LIVE_CFG")"
-fi
-
-TMP="$(mktemp)"
-jq --arg name "$PROFILE" --argjson payload "$PAYLOAD" '
-  . as $live
-  | (($live.profiles // [])
-      | map(select(.name != $name) | .selected = false)) as $kept
-  | (if ($kept | any(.name == "Default")) then $kept
-     else [{name: "Default",
-            virtual_hid_keyboard: {keyboard_type_v2: "ansi"}}] + $kept end) as $kept2
-  | $live | .profiles = ($kept2 + [$payload])
-' <<< "$BASE" > "$TMP"
-
-jq empty "$TMP" || { echo "error: produced invalid JSON, aborting" >&2; rm -f "$TMP"; exit 1; }
-mv "$TMP" "$LIVE_CFG"
-
-jq -r --arg name "$PROFILE" '
-  (.profiles[] | select(.name == $name)) as $p
-  | "Installed profile \"\($name)\" (\(($p.simple_modifications // []) | length) modifier mappings, \((($p.complex_modifications.rules) // []) | length) rules)",
-    "Preserved profiles: \([.profiles[].name] - [$name] | join(", "))"
-' "$LIVE_CFG"
+"$PROFILE_MANAGER" install "$PROFILE"
 
 sleep 2
 "$CLI" --select-profile "$PROFILE"

@@ -223,6 +223,21 @@ If post-install verification finds a manual macOS setting that still needs
 attention, the installer exits unsuccessfully after reporting it, but does not
 roll back the configuration it already installed.
 
+To remove every installer-managed component at once:
+
+```sh
+./install-karabiner-config.sh --uninstall
+```
+
+This removes the managed Karabiner profile and the AppKit and VS Code/VSCodium
+bindings while preserving unrelated profiles and bindings. If installation
+replaced an existing profile with the same name, that original profile and the
+previously active profile are restored. A changed managed profile or editor
+block is not deleted. The command also prints reminders to remove any lines
+copied into `~/.zshrc` or `~/.bashrc` and to restore manually changed macOS
+Keyboard Shortcuts. Pass a custom profile name after `--uninstall` if the
+layout was installed under a name other than `Linux`.
+
 To remove only the installer-managed AppKit bindings and restore any values
 that existed before installation:
 
@@ -322,8 +337,10 @@ setup not stored in a file you control.
 | `generate-karabiner.sh` | source of truth: the tables that build the rules |
 | `karabiner.json` | generated output |
 | `install-karabiner-config.sh` | list profiles, verify, and merge all managed configuration |
+| `manage-karabiner-profile.py` | safely install/remove and restore the owned Karabiner profile |
 | `manage-appkit-keybindings.py` | safely install/remove native editing bindings |
 | `manage-editor-keybindings.py` | safely install/remove VS Code/VSCodium bindings |
+| `test_manage_karabiner_profile.py` | regression tests for reversible profile changes |
 | `test_manage_appkit_keybindings.py` | regression tests for reversible AppKit changes |
 | `test_manage_editor_keybindings.py` | regression tests for reversible editor changes |
 | `verify-macos-setup.sh` | 25 read-only checks |
