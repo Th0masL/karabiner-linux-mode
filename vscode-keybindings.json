@@ -59,6 +59,16 @@
     "args": { "text": "\u0013" }, "when": "terminalFocus" },   // pause terminal output
   { "key": "cmd+o", "command": "workbench.action.terminal.sendSequence",
     "args": { "text": "\u000f" }, "when": "terminalFocus" },   // execute history entry and load next
+  { "key": "cmd+i", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0009" }, "when": "terminalFocus" },   // horizontal tab / completion
+  { "key": "cmd+j", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u000a" }, "when": "terminalFocus" },   // line feed / application command
+  { "key": "cmd+m", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u000d" }, "when": "terminalFocus" },   // carriage return / accept
+  { "key": "cmd+x", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u0018" }, "when": "terminalFocus" },   // application prefix / Nano exit
+  { "key": "cmd+shift+6", "command": "workbench.action.terminal.sendSequence",
+    "args": { "text": "\u001e" }, "when": "terminalFocus" },   // Pico: start/clear text selection (^^)
   { "key": "cmd+backspace", "command": "workbench.action.terminal.sendSequence",
     "args": { "text": "\u0017" }, "when": "terminalFocus" },   // delete word back
   { "key": "cmd+delete", "command": "workbench.action.terminal.sendSequence",

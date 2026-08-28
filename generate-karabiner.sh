@@ -138,8 +138,10 @@ rule() {
 # The remapping puts real Control on [2] and [5], but Linux expects control
 # characters on [1]. Inside terminal apps, translate them back.
 #=============================================================================#
+CONTROL_KEYS=()
 while read -r key meaning; do
   [[ -z "${key:-}" || "$key" == \#* ]] && continue
+  CONTROL_KEYS+=("$key")
   upper="$(printf '%s' "$key" | tr '[:lower:]' '[:upper:]')"
   rule "terminal: [1]+${upper} sends ^${upper} ($meaning)" \
        "$(man "$key" command "$key" left_control "$IF_TERM")"
@@ -166,7 +168,22 @@ u   kill before cursor
 k   kill after cursor
 w   delete word back
 r   reverse history search
+i   horizontal tab / completion
+j   line feed / application command
+m   carriage return / accept
+x   application prefix / Nano exit
 TABLE
+
+CONTROL_KEY_SET="$(printf '%s\n' "${CONTROL_KEYS[@]}" | LC_ALL=C sort | tr -d '\n')"
+if [[ "$CONTROL_KEY_SET" != "abcdefghijklmnopqrstuvwxyz" ]]; then
+  echo "error: terminal control-character table must contain a-z exactly once" >&2
+  exit 1
+fi
+
+# Pico uses ^^ (Control+caret, ASCII 0x1e) to start or clear a text
+# selection. On a US keyboard the caret is Shift+6.
+rule "terminal: [1]+Shift+6 sends ^^ (Pico selection)" \
+     "$(man 6 command+shift 6 left_control+left_shift "$IF_TERM")"
 
 # Linux Ctrl+Delete deletes the next word. ESC-d is the standard Emacs-mode
 # shell command for that action and works independently of terminal settings.

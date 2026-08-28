@@ -67,7 +67,7 @@ Everything after the positional remapping is exception handling:
 | macOS Keyboard Shortcuts | workspaces and Mission Control, moved to `[1]+[3]`+arrow |
 | AppKit `DefaultKeyBinding.dict` | Linux-style navigation, selection and word deletion in native editors |
 | `~/.zshrc` | 4 `bindkey` lines |
-| VS Code/VSCodium `keybindings.json` | 40 focus-aware bindings |
+| VS Code/VSCodium `keybindings.json` | 45 focus-aware bindings |
 
 **The remapping must live in Karabiner, not in the macOS Modifier Keys pane.**
 Set in both places it applies twice, and `[1]` ends up as Option. The Karabiner
@@ -137,6 +137,8 @@ Karabiner rules scoped to terminal apps, plus four `bindkey` lines in
 
 | Action | Linux | macOS | Here |
 |---|---|---|---|
+| All terminal control letters | `Ctrl+A`..`Z` | `Ctrl+A`..`Z` | `[1]+A`..`Z` |
+| Start/clear Pico selection | `Ctrl+^` | `Ctrl+^` | `[1]+Shift+6` |
 | Interrupt | `Ctrl+C` | `Ctrl+C` | `[1]+C` |
 | Suspend | `Ctrl+Z` | `Ctrl+Z` | `[1]+Z` |
 | Delete character / EOF | `Ctrl+D` | `Ctrl+D` | `[1]+D` |
@@ -236,7 +238,7 @@ The editor manager keeps existing JSONC comments and unrelated bindings
 byte-for-byte, creates a timestamped backup before every change, and refuses to
 delete its block if that block was edited after installation. Older setups made
 by copying this repository's complete reference file are adopted without
-duplicating the 40 bindings.
+duplicating the reference bindings.
 
 The terminal shortcut opens iTerm2 by default. macOS has no system-wide
 "default terminal" setting, so choose another terminal when generating the

@@ -925,6 +925,203 @@
             ]
           },
           {
+            "description": "terminal: [1]+I sends ^I (horizontal tab / completion)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "i",
+                  "modifiers": {
+                    "mandatory": [
+                      "command"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "i",
+                    "modifiers": [
+                      "left_control"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "terminal: [1]+J sends ^J (line feed / application command)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "j",
+                  "modifiers": {
+                    "mandatory": [
+                      "command"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "j",
+                    "modifiers": [
+                      "left_control"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "terminal: [1]+M sends ^M (carriage return / accept)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "m",
+                  "modifiers": {
+                    "mandatory": [
+                      "command"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "m",
+                    "modifiers": [
+                      "left_control"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "terminal: [1]+X sends ^X (application prefix / Nano exit)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "x",
+                  "modifiers": {
+                    "mandatory": [
+                      "command"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "x",
+                    "modifiers": [
+                      "left_control"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "description": "terminal: [1]+Shift+6 sends ^^ (Pico selection)",
+            "manipulators": [
+              {
+                "type": "basic",
+                "conditions": [
+                  {
+                    "type": "frontmost_application_if",
+                    "bundle_identifiers": [
+                      "^com\\.googlecode\\.iterm2$",
+                      "^com\\.apple\\.Terminal$",
+                      "^com\\.mitchellh\\.ghostty$",
+                      "^com\\.github\\.wez\\.wezterm$",
+                      "^com\\.alacritty$",
+                      "^io\\.alacritty$",
+                      "^net\\.kovidgoyal\\.kitty$",
+                      "^co\\.zeit\\.hyper$"
+                    ]
+                  }
+                ],
+                "from": {
+                  "key_code": "6",
+                  "modifiers": {
+                    "mandatory": [
+                      "command",
+                      "shift"
+                    ]
+                  }
+                },
+                "to": [
+                  {
+                    "key_code": "6",
+                    "modifiers": [
+                      "left_control",
+                      "left_shift"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "description": "terminal: [1]+Fn+Backspace deletes the next word",
             "manipulators": [
               {
