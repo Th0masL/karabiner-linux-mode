@@ -16,7 +16,7 @@ from typing import Any
 
 
 HERE = Path(__file__).resolve().parent
-REFERENCE = HERE / "vscode-keybindings.json"
+REFERENCE = HERE.parent / "config/vscode-keybindings.json"
 STATE = (
     Path.home()
     / "Library/Application Support/karabiner-linux-mode/editor-keybindings-state.plist"

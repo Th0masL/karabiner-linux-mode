@@ -12,9 +12,10 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 PYTHON_TOOLS = [
     "generate-karabiner",
-    "manage-karabiner-profile",
-    "manage-appkit-keybindings",
-    "manage-editor-keybindings",
+    "scripts/generate-karabiner",
+    "scripts/manage-karabiner-profile",
+    "scripts/manage-appkit-keybindings",
+    "scripts/manage-editor-keybindings",
 ]
 BASH_SCRIPTS = ["install-karabiner-config.sh", "verify-macos-setup.sh"]
 SH_SCRIPTS = ["generate-karabiner.sh"]
@@ -28,16 +29,16 @@ def run(label: str, command: list[str]) -> None:
 def check_python_syntax() -> None:
     print("\n=== Python syntax ===", flush=True)
     paths = [HERE / name for name in PYTHON_TOOLS]
-    paths.extend(sorted(HERE.glob("test_*.py")))
+    paths.extend(sorted((HERE / "tests").glob("test_*.py")))
     for path in paths:
         compile(path.read_text(encoding="utf-8"), str(path), "exec")
-        print(f"ok  {path.name}")
+        print(f"ok  {path.relative_to(HERE)}")
 
 
 def main() -> int:
     try:
         check_python_syntax()
-        run("Unit tests", [sys.executable, "-m", "unittest", "discover", "-v"])
+        run("Unit tests", [sys.executable, "-m", "unittest", "discover", "-s", "tests", "-v"])
         run("Generated configuration", [str(HERE / "generate-karabiner"), "--check"])
         run("Bash syntax", ["bash", "-n", *BASH_SCRIPTS])
         run("POSIX shell syntax", ["sh", "-n", *SH_SCRIPTS])

@@ -26,12 +26,12 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-REPO_CFG="$HERE/karabiner.json"
+REPO_CFG="$HERE/config/karabiner.json"
 GENERATOR="$HERE/generate-karabiner"
 VERIFY="$HERE/verify-macos-setup.sh"
-PROFILE_MANAGER="$HERE/manage-karabiner-profile"
-APPKIT_BINDINGS="$HERE/manage-appkit-keybindings"
-EDITOR_BINDINGS="$HERE/manage-editor-keybindings"
+PROFILE_MANAGER="$HERE/scripts/manage-karabiner-profile"
+APPKIT_BINDINGS="$HERE/scripts/manage-appkit-keybindings"
+EDITOR_BINDINGS="$HERE/scripts/manage-editor-keybindings"
 LIVE_CFG="$HOME/.config/karabiner/karabiner.json"
 CLI="/Library/Application Support/org.pqrs/Karabiner-Elements/bin/karabiner_cli"
 DEFAULT_PROFILE="Linux"
@@ -74,7 +74,7 @@ if [[ "${1:-}" == "--uninstall" ]]; then
   cat <<'EOM'
 
 Manual cleanup reminders:
-  - If you added the four bindkey lines from zshrc-snippet.zsh to ~/.zshrc or
+  - If you added the four bindkey lines from config/zshrc-snippet.zsh to ~/.zshrc or
     ~/.bashrc, delete those lines manually.
   - Restore any macOS Keyboard Shortcuts you changed manually if you want the
     original macOS shortcuts back.

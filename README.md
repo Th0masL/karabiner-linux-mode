@@ -1,12 +1,69 @@
-# karabiner-linux-mode
+# Linux Keyboard for macOS
 
-Make a Mac keyboard behave like a Linux one, by **physical key position** rather
-than by what is printed on the keycaps.
+[![Test](https://github.com/Th0masL/linux-keyboard-for-macos/actions/workflows/test.yml/badge.svg)](https://github.com/Th0masL/linux-keyboard-for-macos/actions/workflows/test.yml)
 
-`Ctrl+C` copies in Finder and interrupts in the terminal. `Ctrl+←/→` moves by
-word. `Alt+Tab` switches applications. `Ctrl+Alt+←/→` rotates workspaces.
+Bring Linux keyboard muscle memory to macOS by mapping **physical key
+positions**, not misleading keycap labels.
 
-## Notation: [1] [2] [3] [4] [5]
+`Ctrl+C` copies in Finder and interrupts in a terminal. `Ctrl+←/→` moves by
+word. `Alt+Tab` switches applications. `Ctrl+Alt+←/→` changes workspaces.
+
+This is more than a Karabiner preset: it combines Karabiner-Elements, native
+AppKit bindings, terminal behavior, VS Code/VSCodium integration, verification,
+tests, and a reversible installer.
+
+## Highlights
+
+| | |
+|---|---|
+| Linux muscle memory | Copy, paste, save, find, tabs, word movement, terminal controls and window shortcuts use familiar physical positions. |
+| Context-aware behavior | `[1]+C` copies in applications but sends an interrupt in terminals, including integrated terminals. |
+| Compact keyboard support | Provides Linux-style Home, End, Delete, document navigation and selection without dedicated keys. |
+| Safe installation | Preserves unrelated Karabiner profiles and editor bindings, creates backups, detects drift and supports uninstall. |
+| Dependency-free tooling | Uses executable standard-library Python scripts; no Homebrew packages or Python modules are required. |
+
+Tested with Finder, Notes, TextEdit, Chrome, Firefox, VS Code, VSCodium,
+Sublime Text, Terminal, iTerm2 and Pico/Nano.
+
+## Quick start
+
+Install [Karabiner-Elements](https://karabiner-elements.pqrs.org), then:
+
+```sh
+git clone https://github.com/Th0masL/linux-keyboard-for-macos.git
+cd linux-keyboard-for-macos
+./install-karabiner-config.sh
+cat config/zshrc-snippet.zsh >> ~/.zshrc
+```
+
+Follow any manual macOS Settings instructions reported by the installer, open
+a new terminal, then confirm the complete setup:
+
+```sh
+./verify-macos-setup.sh
+```
+
+To remove every installer-managed component:
+
+```sh
+./install-karabiner-config.sh --uninstall
+```
+
+The uninstall command preserves unrelated configuration and reminds you about
+the shell and macOS settings that were changed manually.
+
+## Contents
+
+- [Key positions](#key-positions-1-2-3-4-5)
+- [How it works](#how-it-works)
+- [Complete mapping](#the-full-mapping)
+- [Installation and configuration](#installation-and-configuration)
+- [Manual macOS settings](#manual-macos-settings)
+- [Verification and tests](#verification-and-tests)
+- [Limitations](#limitations)
+- [Project structure](#project-structure)
+
+## Key positions: [1] [2] [3] [4] [5]
 
 Once you remap the modifiers, the printed labels are misleading, so the five
 modifier keys are referred to by position. The brackets mark a modifier
@@ -41,7 +98,7 @@ are interchangeable Super/Control positions. Apple provides no third modifier
 key on the right that could mirror `[1]`. Copy/paste/save therefore remain
 left-side shortcuts.
 
-## The idea
+## How it works
 
 Instead of translating dozens of shortcuts app by app, **remap the five
 modifier positions once** so the corner key becomes the one macOS treats as
@@ -198,22 +255,17 @@ still work on a plain press.
 | Find next | `F3` | `Cmd+G` | `Fn+F3` |
 | Reload page | `F5` | `Cmd+R` | `Fn+F5` |
 
-## Install
+## Installation and configuration
 
 Requires [Karabiner-Elements](https://karabiner-elements.pqrs.org) and Python 3,
 which is provided by Xcode Command Line Tools on macOS. No Homebrew packages or
 third-party Python modules are required.
 
-```sh
-git clone https://github.com/Th0masL/karabiner-linux-mode.git
-cd karabiner-linux-mode
-./install-karabiner-config.sh
-```
-
-It first refuses to install if the generated `karabiner.json` is stale. It then
-lists your Karabiner profiles, asks which to install into (default `Linux`), and
-merges the profile. Your other profiles are left alone and the previous config
-is backed up. It also safely merges Linux-style native editing behavior into
+The quick-start installer first refuses to install if the generated
+`config/karabiner.json` is stale. It then lists your Karabiner profiles, asks
+which to install into (default `Linux`), and merges the profile. Your other
+profiles are left alone and the previous config is backed up. It also safely
+merges Linux-style native editing behavior into
 `~/Library/KeyBindings/DefaultKeyBinding.dict` and focus-aware bindings into VS
 Code and VSCodium when their user config directories exist. Finally it runs the
 complete verifier against the installed result. Restart open native
@@ -283,7 +335,7 @@ non-default target.
 Then, by hand:
 
 ```sh
-cat zshrc-snippet.zsh >> ~/.zshrc
+cat config/zshrc-snippet.zsh >> ~/.zshrc
 ```
 
 The shell lines remain manual because shell startup files are executable code
@@ -307,7 +359,7 @@ are indistinguishable to macOS. Left enabled, they silently swallow the
 `Control`+arrow events Karabiner sends to your terminal, breaking word movement
 and history search with no visible cause.
 
-## Checking it
+## Verification and tests
 
 Run the dependency-free repository checks after changing code or mappings:
 
@@ -326,8 +378,8 @@ To inspect the currently installed macOS configuration:
 ```
 
 26 read-only checks across macOS shortcuts, Karabiner, AppKit, zsh, VS Code and
-VSCodium. Run it
-whenever something stops working. The usual cause is **Restore Defaults** in
+VSCodium. Run it whenever something stops working. The usual cause is
+**Restore Defaults** in
 Keyboard Shortcuts, which resets every pane at once and is the only part of this
 setup not stored in a file you control.
 
@@ -343,28 +395,27 @@ setup not stored in a file you control.
 * macOS shortcut settings are not version-controlled, and one "Restore Defaults"
   click wipes them.
 
-## Files
+## Project structure
 
 | File | Purpose |
 |---|---|
-| `generate-karabiner` | dependency-free Python source of truth that builds the rules |
+| `generate-karabiner` | stable root command for the Python generator |
 | `generate-karabiner.sh` | compatibility wrapper for the former command |
-| `karabiner.json` | generated output |
 | `install-karabiner-config.sh` | list profiles, verify, and merge all managed configuration |
-| `manage-karabiner-profile` | safely install/remove and restore the owned Karabiner profile |
-| `manage-appkit-keybindings` | safely install/remove native editing bindings |
-| `manage-editor-keybindings` | safely install/remove VS Code/VSCodium bindings |
-| `test_generate_karabiner.py` | semantic-equivalence tests for generated configuration |
-| `test_manage_karabiner_profile.py` | regression tests for reversible profile changes |
-| `test_manage_appkit_keybindings.py` | regression tests for reversible AppKit changes |
-| `test_manage_editor_keybindings.py` | regression tests for reversible editor changes |
+| `config/karabiner.json` | generated Karabiner configuration |
+| `config/vscode-keybindings.json` | reference VS Code/VSCodium configuration |
+| `config/zshrc-snippet.zsh` | the four terminal `bindkey` lines |
+| `scripts/generate-karabiner` | dependency-free Python source of truth |
+| `scripts/manage-karabiner-profile` | safely install/remove and restore the owned Karabiner profile |
+| `scripts/manage-appkit-keybindings` | safely install/remove native editing bindings |
+| `scripts/manage-editor-keybindings` | safely install/remove VS Code/VSCodium bindings |
+| `tests/` | generator and reversible-manager regression tests |
 | `test` | dependency-free repository test runner used locally and in CI |
 | `verify-macos-setup.sh` | 26 read-only checks |
-| `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
-| `zshrc-snippet.zsh` | the four `bindkey` lines |
 
-`karabiner.json` is generated. Edit the tables in `generate-karabiner` and
-re-run it rather than hand-editing 1600 lines of nested JSON:
+`config/karabiner.json` is generated. Edit the tables in
+`scripts/generate-karabiner` and re-run the root command rather than
+hand-editing 1600 lines of nested JSON:
 
 ```sh
 ./generate-karabiner          # rewrite karabiner.json

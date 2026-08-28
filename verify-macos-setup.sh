@@ -25,7 +25,7 @@ command -v python3 >/dev/null 2>&1 || {
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 LIVE="$HOME/.config/karabiner/karabiner.json"
-PROFILE_MANAGER="$HERE/manage-karabiner-profile"
+PROFILE_MANAGER="$HERE/scripts/manage-karabiner-profile"
 PROFILE="${1:-Linux}"
 PASS=0; FAIL=0; WARN=0
 ok()   { printf '  \033[32mPASS\033[0m  %s\n' "$1"; PASS=$((PASS+1)); }
@@ -262,7 +262,7 @@ fi
 
 echo
 echo "[4/6] AppKit key bindings"
-APPKIT_BINDINGS="$HERE/manage-appkit-keybindings"
+APPKIT_BINDINGS="$HERE/scripts/manage-appkit-keybindings"
 if [[ ! -x "$APPKIT_BINDINGS" ]]; then
   warn "AppKit key-binding manager is missing" \
        "expected executable at $APPKIT_BINDINGS"
@@ -285,7 +285,7 @@ check_zsh_binding() {
     ok "$label is bound"
   else
     warn "$label is not correctly bound in zsh" \
-         "append the lines from $HERE/zshrc-snippet.zsh to ~/.zshrc"
+         "append the lines from $HERE/config/zshrc-snippet.zsh to ~/.zshrc"
   fi
 }
 check_zsh_binding '"^[[1;5A"' "[1]+Up history prefix search" \
@@ -302,8 +302,8 @@ echo "[6/6] VS Code and VSCodium"
 # those need opposite behaviour for the same keys. So VS Code carries its own
 # bindings, scoped with "when" clauses. vscode-keybindings.json in this repo is
 # the reference copy.
-REF="$HERE/vscode-keybindings.json"
-EDITOR_MANAGER="$HERE/manage-editor-keybindings"
+REF="$HERE/config/vscode-keybindings.json"
+EDITOR_MANAGER="$HERE/scripts/manage-editor-keybindings"
 
 check_code_bindings() {
   local label="$1" config="$2" audit_output n MISSING leak

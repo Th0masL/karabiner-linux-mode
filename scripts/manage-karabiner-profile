@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 
-REFERENCE = Path(__file__).with_name("karabiner.json")
+REFERENCE = Path(__file__).resolve().parent.parent / "config/karabiner.json"
 LIVE = Path.home() / ".config/karabiner/karabiner.json"
 STATE = (
     Path.home()

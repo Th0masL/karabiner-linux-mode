@@ -12,7 +12,8 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).with_name("manage-karabiner-profile")
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts/manage-karabiner-profile"
 SPEC = importlib.util.spec_from_loader(
     "manage_karabiner_profile",
     SourceFileLoader("manage_karabiner_profile", str(SCRIPT)),

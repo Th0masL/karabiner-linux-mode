@@ -12,7 +12,8 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).with_name("manage-editor-keybindings")
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts/manage-editor-keybindings"
 SPEC = importlib.util.spec_from_loader(
     "manage_editor_keybindings",
     SourceFileLoader("manage_editor_keybindings", str(SCRIPT)),

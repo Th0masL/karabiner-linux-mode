@@ -13,7 +13,8 @@ from importlib.machinery import SourceFileLoader
 from pathlib import Path
 
 
-SCRIPT = Path(__file__).with_name("manage-appkit-keybindings")
+ROOT = Path(__file__).resolve().parents[1]
+SCRIPT = ROOT / "scripts/manage-appkit-keybindings"
 SPEC = importlib.util.spec_from_loader(
     "manage_appkit_keybindings",
     SourceFileLoader("manage_appkit_keybindings", str(SCRIPT)),
