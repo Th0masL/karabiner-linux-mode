@@ -324,6 +324,8 @@ setup not stored in a file you control.
 | `install-karabiner-config.sh` | list profiles, verify, and merge all managed configuration |
 | `manage-appkit-keybindings.py` | safely install/remove native editing bindings |
 | `manage-editor-keybindings.py` | safely install/remove VS Code/VSCodium bindings |
+| `test_manage_appkit_keybindings.py` | regression tests for reversible AppKit changes |
+| `test_manage_editor_keybindings.py` | regression tests for reversible editor changes |
 | `verify-macos-setup.sh` | 25 read-only checks |
 | `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
