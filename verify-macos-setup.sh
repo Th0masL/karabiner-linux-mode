@@ -278,6 +278,16 @@ else
   warn "could not read the live Karabiner config" "is $LIVE valid JSON?"
 fi
 
+PROFILE_MANAGER="$HERE/manage-karabiner-profile.py"
+if [[ ! -x "$PROFILE_MANAGER" ]]; then
+  warn "Karabiner profile ownership manager is missing" \
+       "expected executable at $PROFILE_MANAGER"
+elif PROFILE_STATUS="$("$PROFILE_MANAGER" check "$PROFILE" 2>&1)"; then
+  ok "$PROFILE_STATUS"
+else
+  warn "$PROFILE_STATUS" "run ./install-karabiner-config.sh to establish safe uninstall ownership"
+fi
+
 echo
 echo "[4/6] AppKit key bindings"
 APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"

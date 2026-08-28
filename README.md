@@ -312,7 +312,7 @@ and history search with no visible cause.
 ./verify-macos-setup.sh
 ```
 
-25 read-only checks across macOS shortcuts, Karabiner, AppKit, zsh, VS Code and
+26 read-only checks across macOS shortcuts, Karabiner, AppKit, zsh, VS Code and
 VSCodium. Run it
 whenever something stops working. The usual cause is **Restore Defaults** in
 Keyboard Shortcuts, which resets every pane at once and is the only part of this
@@ -343,7 +343,7 @@ setup not stored in a file you control.
 | `test_manage_karabiner_profile.py` | regression tests for reversible profile changes |
 | `test_manage_appkit_keybindings.py` | regression tests for reversible AppKit changes |
 | `test_manage_editor_keybindings.py` | regression tests for reversible editor changes |
-| `verify-macos-setup.sh` | 25 read-only checks |
+| `verify-macos-setup.sh` | 26 read-only checks |
 | `vscode-keybindings.json` | reference VS Code/VSCodium config, and what the verifier checks against |
 | `zshrc-snippet.zsh` | the four `bindkey` lines |
 

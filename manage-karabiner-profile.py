@@ -190,16 +190,47 @@ def uninstall(requested_name: Optional[str] = None) -> int:
     return 0
 
 
+def check(requested_name: Optional[str] = None) -> int:
+    if not STATE.exists():
+        print("Karabiner profile has no installer ownership record")
+        return 1
+    state = read_json(STATE)
+    name = requested_name or state.get("profile_name") or DEFAULT_PROFILE
+    if state.get("version") != 1 or state.get("profile_name") != name:
+        print(f"Karabiner ownership record does not match profile {name!r}")
+        return 1
+    installed = state.get("installed_profile")
+    if not isinstance(installed, dict):
+        print("Karabiner ownership record has no installed profile snapshot")
+        return 1
+    if not LIVE.exists():
+        print("Karabiner profile ownership exists, but the live config is missing")
+        return 1
+    current = find_profile(read_json(LIVE), name)
+    if current is None:
+        print(f"Installer-owned Karabiner profile {name!r} is missing")
+        return 1
+    if comparable(current) != comparable(installed):
+        print(f"Installer-owned Karabiner profile {name!r} changed after installation")
+        return 1
+    print(f"Karabiner profile {name!r} is installer-managed and reversible")
+    return 0
+
+
 def main() -> int:
-    if len(sys.argv) not in {2, 3} or sys.argv[1] not in {"install", "uninstall"}:
-        print(f"usage: {Path(sys.argv[0]).name} install PROFILE | uninstall [PROFILE]", file=sys.stderr)
+    if len(sys.argv) not in {2, 3} or sys.argv[1] not in {"install", "uninstall", "check"}:
+        print(
+            f"usage: {Path(sys.argv[0]).name} install PROFILE | uninstall [PROFILE] | check [PROFILE]",
+            file=sys.stderr,
+        )
         return 2
     try:
         if sys.argv[1] == "install":
             if len(sys.argv) != 3:
                 raise ValueError("install requires a profile name")
             return install(sys.argv[2])
-        return uninstall(sys.argv[2] if len(sys.argv) == 3 else None)
+        requested = sys.argv[2] if len(sys.argv) == 3 else None
+        return uninstall(requested) if sys.argv[1] == "uninstall" else check(requested)
     except (OSError, ValueError, json.JSONDecodeError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 1

@@ -52,6 +52,7 @@ class KarabinerProfileManagerTests(unittest.TestCase):
         self.write_live([{"name": "Default", "selected": True, "custom": 1}])
 
         self.assertEqual(manager.install("Linux"), 0)
+        self.assertEqual(manager.check("Linux"), 0)
         installed = manager.read_json(manager.LIVE)
         self.assertEqual([p["name"] for p in installed["profiles"]], ["Default", "Linux"])
         self.assertTrue(manager.STATE.exists())
@@ -110,6 +111,7 @@ class KarabinerProfileManagerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "changed after installation"):
             manager.uninstall()
+        self.assertEqual(manager.check(), 1)
         self.assertTrue(manager.STATE.exists())
         self.assertTrue(
             next(p for p in manager.read_json(manager.LIVE)["profiles"] if p["name"] == "Linux")["user_edit"]
@@ -124,7 +126,12 @@ class KarabinerProfileManagerTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "missing"):
             manager.uninstall()
+        self.assertEqual(manager.check(), 1)
         self.assertTrue(manager.STATE.exists())
+
+    def test_check_requires_an_ownership_record(self) -> None:
+        self.write_live([{"name": "Default", "selected": True}, self.layout])
+        self.assertEqual(manager.check("Linux"), 1)
 
 
 if __name__ == "__main__":
