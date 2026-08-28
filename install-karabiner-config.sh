@@ -6,12 +6,12 @@
 #
 # Installs this repo's Linux-style keyboard layout into Karabiner-Elements.
 #
-#   1. lists your existing Karabiner profiles and asks which to install into
-#   2. checks the macOS-side settings the layout depends on, reporting anything
-#      you must change by hand (verify-macos-setup.sh)
+#   1. refuses to install if karabiner.json is stale
+#   2. lists your existing Karabiner profiles and asks which to install into
 #   3. merges the profile into your existing Karabiner config
 #   4. installs Linux-style native macOS text-editing bindings
 #   5. safely merges focus-aware VS Code/VSCodium keybindings when detected
+#   6. verifies the complete installed setup
 #
 # The profile is MERGED, not overwritten: any other profiles you already have
 # are left untouched. Only a profile with the chosen name is replaced.
@@ -26,6 +26,7 @@ set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
 REPO_CFG="$HERE/karabiner.json"
+GENERATOR="$HERE/generate-karabiner.sh"
 VERIFY="$HERE/verify-macos-setup.sh"
 APPKIT_BINDINGS="$HERE/manage-appkit-keybindings.py"
 EDITOR_BINDINGS="$HERE/manage-editor-keybindings.py"
@@ -57,9 +58,12 @@ EOM
 fi
 
 [[ -f "$REPO_CFG" ]] || { echo "error: $REPO_CFG not found" >&2; exit 1; }
+[[ -x "$GENERATOR" ]] || { echo "error: $GENERATOR not found or not executable" >&2; exit 1; }
+[[ -x "$VERIFY" ]] || { echo "error: $VERIFY not found or not executable" >&2; exit 1; }
 [[ -x "$APPKIT_BINDINGS" ]] || { echo "error: $APPKIT_BINDINGS not found or not executable" >&2; exit 1; }
 [[ -x "$EDITOR_BINDINGS" ]] || { echo "error: $EDITOR_BINDINGS not found or not executable" >&2; exit 1; }
 jq empty "$REPO_CFG" 2>/dev/null || { echo "error: $REPO_CFG is not valid JSON" >&2; exit 1; }
+"$GENERATOR" --check
 
 if [[ ! -x "$CLI" ]]; then
   echo "error: karabiner_cli not found. Install Karabiner-Elements first:" >&2
@@ -68,7 +72,7 @@ if [[ ! -x "$CLI" ]]; then
 fi
 
 #-----------------------------------------------------------------------------#
-# 1. list profiles and choose one
+# 2. list profiles and choose one
 #-----------------------------------------------------------------------------#
 if [[ -f "$LIVE_CFG" ]] && jq empty "$LIVE_CFG" 2>/dev/null; then
   LIST="$(jq -r '
@@ -118,27 +122,6 @@ else
   echo "Creating new profile: $PROFILE"
 fi
 echo
-
-#-----------------------------------------------------------------------------#
-# 2. check the macOS side before touching anything
-#-----------------------------------------------------------------------------#
-VERIFY_RC=0
-if [[ -x "$VERIFY" ]]; then
-  "$VERIFY" "$PROFILE" || VERIFY_RC=$?
-else
-  echo "warning: $VERIFY not found or not executable -- skipping macOS checks" >&2
-fi
-
-if [[ $VERIFY_RC -ne 0 ]]; then
-  echo "Some macOS settings need fixing by hand (see the FAIL lines above)."
-  echo "The Karabiner rules will still install, but parts of the layout will"
-  echo "not work until those are corrected."
-  if [[ -t 0 ]]; then
-    printf 'Continue anyway? [y/N]: '
-    read -r go
-    [[ "$go" =~ ^[Yy]$ ]] || { echo "Aborted. Nothing was changed."; exit 1; }
-  fi
-fi
 
 #-----------------------------------------------------------------------------#
 # 3. merge the profile into the live config
@@ -195,4 +178,12 @@ echo
 echo
 "$EDITOR_BINDINGS" install
 echo
+echo "Verifying the installed configuration..."
+VERIFY_RC=0
+"$VERIFY" "$PROFILE" || VERIFY_RC=$?
+if [[ $VERIFY_RC -ne 0 ]]; then
+  echo "Installation completed, but verification found settings that still need attention." >&2
+  exit "$VERIFY_RC"
+fi
+
 echo "Done. Karabiner and editors need no restart; restart native apps for AppKit changes."

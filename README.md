@@ -209,13 +209,19 @@ cd karabiner-linux-mode
 ./install-karabiner-config.sh
 ```
 
-It lists your Karabiner profiles, asks which to install into (default `Linux`),
-runs the macOS checks, then merges the profile. Your other profiles are left
-alone and the previous config is backed up. It also safely merges Linux-style
-native editing behavior into `~/Library/KeyBindings/DefaultKeyBinding.dict`
-and focus-aware bindings into VS Code and VSCodium when their user config
-directories exist. Restart open native applications such as Notes after
-installation; Karabiner and the editors do not need a restart.
+It first refuses to install if the generated `karabiner.json` is stale. It then
+lists your Karabiner profiles, asks which to install into (default `Linux`), and
+merges the profile. Your other profiles are left alone and the previous config
+is backed up. It also safely merges Linux-style native editing behavior into
+`~/Library/KeyBindings/DefaultKeyBinding.dict` and focus-aware bindings into VS
+Code and VSCodium when their user config directories exist. Finally it runs the
+complete verifier against the installed result. Restart open native
+applications such as Notes after installation; Karabiner and the editors do
+not need a restart.
+
+If post-install verification finds a manual macOS setting that still needs
+attention, the installer exits unsuccessfully after reporting it, but does not
+roll back the configuration it already installed.
 
 To remove only the installer-managed AppKit bindings and restore any values
 that existed before installation:
